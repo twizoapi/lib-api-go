@@ -8,7 +8,7 @@
 Connect to the Twizo API using Go. This API includes functions to send verifications (2FA), SMS and Number Lookup.
 
 ## Requirements ##
-* Go >= 1.6
+* Go >= 1.7
 
 ## Get application secret and choose api region ##
 To use the Twizo API client, the following things are required:
@@ -176,6 +176,16 @@ the following guidelines in mind:
 1. Code must be `go fmt` compliant.
 2. All types, structs and funcs should be documented.
 3. Ensure that `make test` succeeds.
+
+Code can best be checked out like this (as an example, replace where needed)
+
+```sh
+export GOPATH="<DIR>"
+git clone git@github.com:twizoapi/lib-api-go.git $(GOPATH)/src/github.com/twizoapi/lib-api-go
+cd $(GOPATH)/src/github.com/twizoapi/lib-api-go
+```
+
+This way will allow tests to work
 
 ## ToDo ##
 - [x] Add example for number lookup

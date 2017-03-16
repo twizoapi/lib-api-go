@@ -1,47 +1,57 @@
 SOURCEDIR           = $(shell pwd)
 
-# set the GOPATH on execution only if not
-# already set in environment
-ifeq ($(strip $(GOPATH)),)
-    SET_GOPATH = env GOPATH="$(SOURCEDIR)/../../../../"
+ifndef GOPATH
+    export GOPATH=$(SOURCEDIR)/../../../../
 endif
 
-PACKAGE             = twizo-lib-go
-BIN                 = $(GOPATH)/bin
-BASE                = $(GOPATH)/src/$(PACKAGE)
-GO_LINT             = $(BIN)/gometalinter.v1
-GO_RICHGO           = $(BIN)/richgo
-GO_HTTPMOCK         = $(BASE)/gopkg.in/jarcoal/httpmock.v1
+GO_LINT             = $(GOPATH)/bin/golint
+GO_METALINTER       = $(GOPATH)/bin/gometalinter.v1
+GO_RICHGO           = $(GOPATH)/bin/richgo
+GO_HTTPMOCK         = $(GOPATH)/src/gopkg.in/jarcoal/httpmock.v1
 
+EXAMPLES            = $(wildcard $(SOURCEDIR)/examples/*/*.go)
 
 # these targets do not actually produce
 # output files
 .PHONY: \
     all \
+    travis \
     richtest \
-    test \
+    examples \
+    test_units \
 	lint
 
 all: test
 
-$(BASE):
-	@mkdir -p $(dir $@)
+travis: test_units examples
+test: test_units
 
-$(GO_LINT): | $(BASE)
+$(GO_LINT): |
+	go get github.com/golang/lint/golint
+
+$(GO_METALINTER): |
 	go get gopkg.in/alecthomas/gometalinter.v1
 
-$(GO_RICHGO): | $(BASE)
+$(GO_RICHGO): |
 	go get github.com/kyoh86/richgo
 
-$(GO_HTTPMOCK): | $(BASE)
+$(GO_HTTPMOCK): |
+	@echo $(GO_HTTPMOCK)
 	go get gopkg.in/jarcoal/httpmock.v1
 
-lint: | $(GO_LINT)
-	$(GO_LINT) --disable-all --enable=golint
+lint: | $(GO_LINT) $(GO_METALINTER)
+	$(GO_METALINTER) --disable-all --enable=golint
 
 richtest: | $(GO_RICHGO) $(GO_HTTPMOCK)
-	$(SET_GOPATH) $(GO_RICHGO) test -v -coverprofile=c.out
+	$(GO_RICHGO) test -v -coverprofile=c.out
 
-test: | $(GO_HTTPMOCK)
-	$(SET_GOPATH) go test -v -coverprofile=c.out
+test_units: | $(GO_HTTPMOCK)
+	go test -v -coverprofile=c.out
 
+examples:
+	go build -o bin/numberlookupPoll      examples/numberlookup/numberlookupPoll.go
+	go build -o bin/numberlookupSimple    examples/numberlookup/numberlookupSimple.go
+	go build -o bin/smsSimple             examples/sms/smsSimple.go
+	go build -o bin/smsPoll               examples/sms/smsPoll.go
+	go build -o bin/verificationAdvanced  examples/verification/verificationAdvanced.go
+	go build -o bin/verificationSimpleSms examples/verification/verificationSimpleSms.go

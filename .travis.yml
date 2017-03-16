@@ -1,0 +1,16 @@
+language: go
+sudo: false
+go:
+    - 1.7
+    - 1.8
+    - tip
+install:
+    - go get gopkg.in/jarcoal/httpmock.v1
+before_install:
+    - RepoName=`basename $PWD`; SrcDir=`dirname $PWD`; DestDir="`dirname $SrcDir`/twizoapi"
+    - if [[ "$SrcDir" != "$DestDir" ]]; then mv "$SrcDir" "$DestDir"; cd ../../twizoapi/$RepoName; export TRAVIS_BUILD_DIR=`dirname $TRAVIS_BUILD_DIR`/$RepoName; fi
+script: make travis
+matrix:
+    allow_failures:
+        - go: tip
+    fast_finish: true
