@@ -68,10 +68,10 @@ func TestNumberLookupSubmit(t *testing.T) {
 		MessageID string
 		Number    string
 		Host      string
-	} {
-		MessageID : "test-1.10314.sms58c16b15c261a5.18930279",
-		Number    : "6100000000",
-		Host      : twizo.GetHostForRegion(twizo.RegionCurrent),
+	}{
+		MessageID: "test-1.10314.sms58c16b15c261a5.18930279",
+		Number:    "6100000000",
+		Host:      twizo.GetHostForRegion(twizo.RegionCurrent),
 	}
 
 	b, err := ParseTemplateStringToBytes(tpl, data)
@@ -79,7 +79,7 @@ func TestNumberLookupSubmit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	HttpMockSendJsonPostTo(
+	_ = HttpMockSendJsonPostTo(
 		fmt.Sprintf("https://%s/%s/numberlookup/submit", data.Host, twizo.ClientAPIVersion),
 		http.StatusCreated,
 		b,
@@ -96,4 +96,3 @@ func TestNumberLookupSubmit(t *testing.T) {
 		t.Fatalf("Invalid message id expected [%s] got [%v]", data.MessageID, items[0].GetMessageID())
 	}
 }
-

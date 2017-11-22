@@ -31,42 +31,56 @@ import (
 	"time"
 )
 
+// APIRegion the region to call
 type APIRegion string
 
 // ResultType how to we want the results
 type ResultType int
+
+// All api regions
 const (
 	APIRegionAsia    APIRegion = "asia"
 	APIRegionEU      APIRegion = "eu"
 	APIRegionDefault APIRegion = "default"
+)
 
+// All client variables
+const (
 	ClientAPIVersion string = "v1"
 	ClientLibVersion string = "0.1.0"
 	ClientLibName    string = "Twizo-go-lib"
 	ClientAuthUser   string = "twizo"
+)
 
+const (
 	defaultHTTPTimeout = 80 * time.Second
+)
 
+// All result types
+const (
 	// ResultTypeNone (default)
-	ResultTypeNone               ResultType = 0
+	ResultTypeNone ResultType = 0
 
 	// ResultTypeCallback send result to callbackURL (via post)
-	ResultTypeCallback           ResultType = 1
+	ResultTypeCallback ResultType = 1
 
 	// ResultTypePolling we want to poll for the results
-	ResultTypePolling            ResultType = 2
+	ResultTypePolling ResultType = 2
 
 	// ResultTypeCallbackPolling (use both SmsResultTypeCallback
 	// and SmsResultTypePolling)
-	ResultTypeCallbackPolling    ResultType = 3
+	ResultTypeCallbackPolling ResultType = 3
 )
 
+// Logger contains the logger
 var Logger = InitLoggers()
+
 var regionUrls = map[APIRegion]string{
 	APIRegionAsia:    "api-asia-01.twizo.com",
 	APIRegionEU:      "api-eu-01.twizo.com",
 	APIRegionDefault: "api-eu-01.twizo.com",
 }
+
 var httpClient = &http.Client{Timeout: HTTPClientTimeout}
 var httpClientUserAgent = fmt.Sprintf(
 	"%s/%s Go/%s/%s/%s",
@@ -77,30 +91,39 @@ var httpClientUserAgent = fmt.Sprintf(
 	runtime.GOOS,
 )
 
-// posible to override these settings
+// APIKey the api key : possible to override this setting
 var APIKey string
-var RegionCurrent      = APIRegionDefault
-var HTTPClientTimeout  = defaultHTTPTimeout
+// RegionCurrent the current region : possible to override this setting
+var RegionCurrent = APIRegionDefault
+// HTTPClientTimeout the current timeout on http calls
+var HTTPClientTimeout = defaultHTTPTimeout
 
+
+// Recipient the recipient
 type Recipient string
 
+// Request interface
 type Request interface {
 }
 
+// Response interface
 type Response interface {
 	UnmarshalJSON(data []byte) error
 }
 
+// Client interface
 type Client interface {
 	Call(method string, path string, request Request, v interface{}) error
 }
 
+// HTTPClient is the actual http client
 type HTTPClient struct {
 	Region     APIRegion
 	Key        string
 	HTTPClient *http.Client
 }
 
+// Call performs the actual call on the client
 func (c *HTTPClient) Call(method string, url *url.URL, request Request, expectCode int, v interface{}) error {
 	// convert request to body
 	requestBody := bytes.NewBuffer(nil)
@@ -133,6 +156,7 @@ func (c *HTTPClient) Call(method string, url *url.URL, request Request, expectCo
 	return nil
 }
 
+// NewRequest creates a new request, this allows it to be tested [todo: refactor]
 func (c *HTTPClient) NewRequest(method string, url *url.URL, body io.Reader) (*http.Request, error) {
 
 	if url.Host == "" {
@@ -165,7 +189,7 @@ func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error 
 		Logger.Error().Printf("Request to Twizo failed: %v", err)
 		return err
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() // nolint: errcheck
 
 	// might want to use json.Decoder instead of ioutl.ReadAll -> sending to Unmarshal
 	resBody, err := ioutil.ReadAll(res.Body)
@@ -221,6 +245,7 @@ func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error 
 	return nil
 }
 
+// GetClient gets the a client initialized with region and key
 func GetClient(region APIRegion, key string) *HTTPClient {
 	return &HTTPClient{region, key, GetHTTPClient()}
 }
@@ -229,11 +254,12 @@ func GetClient(region APIRegion, key string) *HTTPClient {
 // Support Structs
 //
 
-// HATEOAS link structure
+// HATEOASHref link structure
 type HATEOASHref struct {
 	Href url.URL `json:"href"`
 }
 
+// UnmarshalJSON the HATEOASHref link
 func (l *HATEOASHref) UnmarshalJSON(j []byte) error {
 	var rawStrings map[string]string
 
@@ -256,16 +282,17 @@ func (l *HATEOASHref) UnmarshalJSON(j []byte) error {
 	return nil
 }
 
+// HATEOASLinks struct
 type HATEOASLinks struct {
 	Self HATEOASHref `json:"self"`
 }
 
-func (h HATEOASLinks) getDeepClone () (HATEOASLinks) {
-	linkUrl, _ := url.Parse(h.Self.Href.String())
+func (h HATEOASLinks) getDeepClone() HATEOASLinks {
+	linkURL, _ := url.Parse(h.Self.Href.String())
 
 	return HATEOASLinks{
 		Self: HATEOASHref{
-			Href: *linkUrl,
+			Href: *linkURL,
 		},
 	}
 }
@@ -285,16 +312,19 @@ func createSelfLinks(selfLink *url.URL) HATEOASLinks {
 func SetHTTPClient(client *http.Client) {
 	httpClient = client
 }
+
+// GetHTTPClient returns the current http client
 func GetHTTPClient() *http.Client {
 	return httpClient
 }
 
+// GetURLFor gets the url for a request [todo: refactor]
 func GetURLFor(path string) (*url.URL, error) {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
 
-	if !strings.HasPrefix(path, "/" + ClientAPIVersion) {
+	if !strings.HasPrefix(path, "/"+ClientAPIVersion) {
 		path = fmt.Sprintf("/%s%s", ClientAPIVersion, path)
 	}
 
@@ -309,10 +339,12 @@ func GetURLFor(path string) (*url.URL, error) {
 	return apiURL, nil
 }
 
+// AddHostForRegion adds a region with a host
 func AddHostForRegion(region APIRegion, host string) {
 	regionUrls[region] = host
 }
 
+// GetHostForRegion gets a region for a host
 func GetHostForRegion(region APIRegion) string {
 	if host, ok := regionUrls[region]; ok {
 		return host
@@ -321,13 +353,13 @@ func GetHostForRegion(region APIRegion) string {
 	return regionUrls["default"]
 }
 
+// GetRegions get all regions
 func GetRegions() map[APIRegion]string {
 	return regionUrls
 }
 
-
-func isDcsBinary(i int) (bool) {
-	if i & 200 == 0 || i & 248 == 240 {
+func isDcsBinary(i int) bool {
+	if i&200 == 0 || i&248 == 240 {
 		return ((i & 4) > 0)
 	}
 	return false

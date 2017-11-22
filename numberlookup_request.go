@@ -1,34 +1,35 @@
 package twizo
 
 import (
-	"net/url"
-	"net/http"
 	"encoding/json"
+	"net/http"
+	"net/url"
 )
 
+// NumberLookupRequest struct
 type NumberLookupRequest struct {
 	numbers     []Recipient
 	tag         string
 	validity    int
 	resultType  ResultType
-	callbackURL *url.URL		// only relevant for SmsResultTypeCallback | SmsResultTYpeCallbackPollling
+	callbackURL *url.URL // only relevant for SmsResultTypeCallback | SmsResultTYpeCallbackPollling
 }
 
 type jsonNumberLookupRequest struct {
-	Numbers     []Recipient            `json:"numbers"`
-	Tag         string                 `json:"tag,omitempty"`
-	Validity    int                    `json:"validity,omitempty"`
-	ResultType  ResultType             `json:"resultType,omitempty"`
-	CallbackURL *url.URL               `json:"callbackUrl,omitempty"`
+	Numbers     []Recipient `json:"numbers"`
+	Tag         string      `json:"tag,omitempty"`
+	Validity    int         `json:"validity,omitempty"`
+	ResultType  ResultType  `json:"resultType,omitempty"`
+	CallbackURL *url.URL    `json:"callbackUrl,omitempty"`
 }
 
 // MarshalJSON is used to convert NumberLookupRequest to json
 func (request *NumberLookupRequest) MarshalJSON() ([]byte, error) {
 	jsonRequest := jsonNumberLookupRequest{
-		Numbers           : request.numbers,
-		Tag               : request.tag,
-		Validity          : request.validity,
-		ResultType        : request.resultType,
+		Numbers:    request.numbers,
+		Tag:        request.tag,
+		Validity:   request.validity,
+		ResultType: request.resultType,
 	}
 
 	// set the callback url if we need one, it still might be empty
@@ -39,47 +40,58 @@ func (request *NumberLookupRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(jsonRequest)
 }
 
-func (v *NumberLookupRequest) SetNumbers(numbers []Recipient) {
-	v.numbers = numbers
+// SetNumbers sets the numbers for a numberlookup request
+func (request *NumberLookupRequest) SetNumbers(numbers []Recipient) {
+	request.numbers = numbers
 }
 
-func (v NumberLookupRequest) GetNumbers() ([]Recipient) {
-	return v.numbers
+// GetNumbers gets the numbers of a numberlookup request
+func (request NumberLookupRequest) GetNumbers() []Recipient {
+	return request.numbers
 }
 
-func (v *NumberLookupRequest) SetTag(tag string) {
-	v.tag = tag
+// SetTag sets the tag for a numberlookup request
+func (request *NumberLookupRequest) SetTag(tag string) {
+	request.tag = tag
 }
 
-func (v NumberLookupRequest) GetTag() (string) {
-	return v.tag
+// GetTag returns the tag of a numberlookup request
+func (request NumberLookupRequest) GetTag() string {
+	return request.tag
 }
 
-func (v *NumberLookupRequest) SetValidity(validity int) {
-	v.validity = validity
+// SetValidity sets the validity for a numberlookup request
+func (request *NumberLookupRequest) SetValidity(validity int) {
+	request.validity = validity
 }
 
-func (v NumberLookupRequest) GetValidation() (int) {
-	return v.validity
+// GetValidation returns the validity of a numberlookup request
+func (request NumberLookupRequest) GetValidation() int {
+	return request.validity
 }
 
-func (v *NumberLookupRequest) SetResultType(resultType ResultType) {
-	v.resultType = resultType
+// SetResultType sets the result type for a numberlookup request
+func (request *NumberLookupRequest) SetResultType(resultType ResultType) {
+	request.resultType = resultType
 }
 
-func (v NumberLookupRequest) GetResultType() (ResultType) {
-	return v.resultType
+// GetResultType gets the requested result type of a numberlookup request
+func (request NumberLookupRequest) GetResultType() ResultType {
+	return request.resultType
 }
 
-func (v *NumberLookupRequest) SetCallbackUrl(URL *url.URL) {
-	v.callbackURL = URL
+// SetCallbackURL sets the callback url for a numberlookup request
+func (request *NumberLookupRequest) SetCallbackURL(URL *url.URL) {
+	request.callbackURL = URL
 }
 
-func (v NumberLookupRequest) GetCallbackUrl() (*url.URL) {
-	return v.callbackURL
+// GetCallbackURL gets the callback url of a numberlookup request
+func (request NumberLookupRequest) GetCallbackURL() *url.URL {
+	return request.callbackURL
 }
 
-func (v *NumberLookupRequest) Submit() (*NumberLookupResponses, error) {
+// Submit actually submits the numberlookup request
+func (request *NumberLookupRequest) Submit() (*NumberLookupResponses, error) {
 	responses := &NumberLookupResponses{}
 
 	apiURL, err := GetURLFor("numberlookup/submit")
@@ -91,7 +103,7 @@ func (v *NumberLookupRequest) Submit() (*NumberLookupResponses, error) {
 	err = GetClient(RegionCurrent, APIKey).Call(
 		http.MethodPost,
 		apiURL,
-		v,
+		request,
 		http.StatusCreated,
 		responses,
 	)

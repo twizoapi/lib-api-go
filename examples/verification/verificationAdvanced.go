@@ -1,13 +1,13 @@
-package main;
+package main
 
 import (
+	"fmt"
 	twizo "github.com/twizoapi/lib-api-go"
 	"github.com/twizoapi/lib-api-go/examples"
-	"fmt"
 )
 
 func main() {
-	utils.Main();
+	utils.Main()
 
 	twizo.APIKey = utils.SuppliedApiKey
 	twizo.RegionCurrent = twizo.APIRegion(utils.SuppliedRegion)
@@ -29,7 +29,7 @@ func main() {
 	}
 	// now we assume that verificationResponse.MessageId was saved, and
 	// retrieved in messageId
-	messageID := verificationResponse.GetMessageID();
+	messageID := verificationResponse.GetMessageID()
 
 	// valid Token for a Test Application with number 6100000000 is 012345, ask user
 	token, _ := utils.AskForInput("Enter token [A123456789]: ", "A123456789")

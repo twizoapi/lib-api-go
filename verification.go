@@ -3,24 +3,33 @@ package twizo
 import (
 	"fmt"
 )
-
+// VerificationStatusCode contains the verification status code
 type VerificationStatusCode int
+
+// VerificationType describes the verification type
 type VerificationType string
+
+// VerificationTokenType describes the verification token type
 type VerificationTokenType string
 
+// VerificationTokenErrorCode describes the token error code
 type VerificationTokenErrorCode int
 
+// All verification types supported
 const (
-	// Verification Type
 	VerificationTypeSms  VerificationType = "sms"
 	VerificationTypeCall VerificationType = "call"
+)
 
-	// Verification Token Type
+// All verification Token types
+const (
 	VerificationTokenTypeDefault VerificationTokenType = ""
 	VerificationTokenTypeNumeric VerificationTokenType = "numeric"
 	VerificationTokenTypeAlpha   VerificationTokenType = "alphanumeric"
+)
 
-	// Verification Status
+// Result of verification tokens
+const (
 	VerificationTokenUnknown         VerificationStatusCode = 0
 	VerificationTokenSuccess         VerificationStatusCode = 1
 	VerificationTokenAlreadyVerified VerificationStatusCode = 101
@@ -29,27 +38,26 @@ const (
 	VerificationTokenFailed          VerificationStatusCode = 104
 )
 
-// Create a new verificationParam using a recipient (the only required var)
+// NewVerificationRequest creates a new verificationParam using a recipient (the only required var)
 func NewVerificationRequest(recipient Recipient) *VerificationRequest {
 	params := &VerificationRequest{recipient: recipient}
 	return params
 }
 
-
-// Create a verificationRequest from verificationParams and submit it
+// VerificationSubmit creates a verificationRequest from verificationParams and submits it
 func VerificationSubmit(recipient interface{}) (*VerificationResponse, error) {
 	r, err := convertRecipients(recipient)
 	if err != nil {
 		return nil, err
 	}
 	if len(r) != 1 {
-		return nil, fmt.Errorf("Need exactly one [recipient] for VerificationSubmit got [%d]", len(r))
+		return nil, fmt.Errorf("need exactly one [recipient] for VerificationSubmit got [%d]", len(r))
 	}
 
 	return NewVerificationRequest(r[0]).Submit()
 }
 
-// Retrieve the status of the validation using the messageId
+// VerificationStatus retrieves the status of the validation using the messageId
 func VerificationStatus(messageID string) (*VerificationResponse, error) {
 	apiURL, err := GetURLFor(fmt.Sprintf("verification/submit/%s", messageID))
 	if err != nil {
@@ -61,7 +69,7 @@ func VerificationStatus(messageID string) (*VerificationResponse, error) {
 	return request, err
 }
 
-// Validate the result of the validation request using the messageId and the token
+// VerificationVerify validates the result of the validation request using the messageId and the token
 func VerificationVerify(messageID string, token string) (*VerificationResponse, error) {
 	apiURL, err := GetURLFor(fmt.Sprintf("verification/submit/%s", messageID))
 	if err != nil {

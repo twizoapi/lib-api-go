@@ -19,7 +19,7 @@ func init() {
 }
 
 func TestVerificationNew(t *testing.T) {
-	verificationRequest := twizo.NewVerificationRequest(twizo.Recipient(("0000000000")))
+	verificationRequest := twizo.NewVerificationRequest(twizo.Recipient("0000000000"))
 
 	_, err := json.Marshal(verificationRequest)
 	if err != nil {
@@ -32,9 +32,9 @@ func TestVerificationSubmit(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	TestResponse := struct {
-		MessageId string `json:"messageId"`
+		MessageID string `json:"messageId"`
 	}{
-		MessageId: "1",
+		MessageID: "1",
 	}
 
 	httpmock.RegisterResponder(http.MethodPost,
@@ -62,9 +62,9 @@ func TestVerificationSubmitAdvanced(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	TestResponse := struct {
-		MessageId string `json:"messageId"`
+		MessageID string `json:"messageId"`
 	}{
-		MessageId: "1",
+		MessageID: "1",
 	}
 
 	httpmock.RegisterResponder(http.MethodPost,

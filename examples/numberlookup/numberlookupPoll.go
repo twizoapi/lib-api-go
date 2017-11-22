@@ -1,14 +1,14 @@
-package main;
+package main
 
 import (
+	"fmt"
 	twizo "github.com/twizoapi/lib-api-go"
 	"github.com/twizoapi/lib-api-go/examples"
-	"fmt"
 	"time"
 )
 
 func main() {
-	utils.Main();
+	utils.Main()
 
 	twizo.APIKey = utils.SuppliedApiKey
 	twizo.RegionCurrent = twizo.APIRegion(utils.SuppliedRegion)
@@ -32,7 +32,7 @@ func main() {
 	maxPolls := 10
 	for i := 1; i <= maxPolls; i++ {
 		fmt.Printf("Polling [%d/%d]\n", i, maxPolls)
-		numberLookupResult, err := twizo.NumberLookupPollStatus();
+		numberLookupResult, err := twizo.NumberLookupPollStatus()
 		if err != nil {
 			panic(err)
 		}

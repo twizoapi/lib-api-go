@@ -6,8 +6,10 @@ import (
 	"os"
 )
 
+// LogLevel the log levels defined
 type LogLevel int
 
+// List of Loglevels
 const (
 	Debug   LogLevel = 0
 	Info    LogLevel = 1
@@ -15,6 +17,7 @@ const (
 	Error   LogLevel = 3
 )
 
+// APILoggerInterface api logger interface
 type APILoggerInterface interface {
 	Debug()
 	Info()
@@ -22,11 +25,13 @@ type APILoggerInterface interface {
 	Error()
 }
 
+// APILogger actual logger
 type APILogger struct {
 	APILoggerInterface
 	Loggers map[LogLevel]*log.Logger
 }
 
+// InitLoggers initializes the logger
 func InitLoggers() *APILogger {
 	l := &APILogger{
 		Loggers: make(map[LogLevel]*log.Logger),
@@ -38,26 +43,32 @@ func InitLoggers() *APILogger {
 	return l
 }
 
+// Set binds a loglevel to a logger
 func (l *APILogger) Set(level LogLevel, logger *log.Logger) {
 	l.Loggers[level] = logger
 }
 
+// Get returns the logger for a loglevel
 func (l *APILogger) Get(level LogLevel) *log.Logger {
 	return l.Loggers[level]
 }
 
-func (l *APILogger) Info() *log.Logger {
-	return l.Get(Info)
-}
-
+// Debug gets the debug logger
 func (l *APILogger) Debug() *log.Logger {
 	return l.Get(Debug)
 }
 
+// Info gets the info logger
+func (l *APILogger) Info() *log.Logger {
+	return l.Get(Info)
+}
+
+// Warning gets the warning logger
 func (l *APILogger) Warning() *log.Logger {
 	return l.Get(Warning)
 }
 
+// Error gets the error logger
 func (l *APILogger) Error() *log.Logger {
 	return l.Get(Error)
 }

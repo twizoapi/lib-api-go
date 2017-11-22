@@ -19,11 +19,16 @@ func init() {
 }
 
 func TestSmsNew(t *testing.T) {
-	smsRequest := twizo.NewSmsRequest([]twizo.Recipient{twizo.Recipient("0000000000")}, "Message", "Sender")
-
-	_, err := json.Marshal(smsRequest)
+	smsRequest, err := twizo.NewSmsRequest([]twizo.Recipient{twizo.Recipient("0000000000")}, "Message", "Sender")
 	if err != nil {
 		t.Fatal(err)
+		return
+	}
+
+	_, err = json.Marshal(smsRequest)
+	if err != nil {
+		t.Fatal(err)
+		return
 	}
 }
 
@@ -75,10 +80,10 @@ func TestSmsSubmit(t *testing.T) {
 		MessageID string
 		Number    string
 		Host      string
-	} {
-		MessageID : "test-1.10314.sms58c16b15c261a5.18930279",
-		Number    : "6100000000",
-		Host      : twizo.GetHostForRegion(twizo.RegionCurrent),
+	}{
+		MessageID: "test-1.10314.sms58c16b15c261a5.18930279",
+		Number:    "6100000000",
+		Host:      twizo.GetHostForRegion(twizo.RegionCurrent),
 	}
 
 	b, err := ParseTemplateStringToBytes(tpl, data)
@@ -86,11 +91,14 @@ func TestSmsSubmit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	HttpMockSendJsonPostTo(
+	err = HttpMockSendJsonPostTo(
 		fmt.Sprintf("https://%s/%s/sms/submitsimple", data.Host, twizo.ClientAPIVersion),
 		http.StatusCreated,
 		b,
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	response, err := twizo.SmsSubmit([]twizo.Recipient{twizo.Recipient(data.Number)}, "Message", "TwizoTest")
 	if err != nil {

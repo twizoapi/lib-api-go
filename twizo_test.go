@@ -82,8 +82,11 @@ func TestReceivingBadJsonRequests(t *testing.T) {
 	client := twizo.GetClient(TestRegion, TestApiKey)
 
 	// Test Returning bad json
-	httpmock.RegisterResponder("POST", fmt.Sprintf("https://%s/%s/broken", twizo.GetHostForRegion(twizo.RegionCurrent), twizo.ClientAPIVersion),
-		httpmock.NewStringResponder(http.StatusConflict, `this is not json`))
+	httpmock.RegisterResponder(
+		"POST",
+		fmt.Sprintf("https://%s/%s/broken", twizo.GetHostForRegion(twizo.RegionCurrent), twizo.ClientAPIVersion),
+		httpmock.NewStringResponder(http.StatusConflict, `this is not json`),
+	)
 
 	apiURL, err := twizo.GetURLFor("/broken")
 	if err != nil {
@@ -108,8 +111,11 @@ func TestReceivingUnexpectedCodeRequests(t *testing.T) {
 	client := twizo.GetClient(TestRegion, TestApiKey)
 
 	// Test Returning bad json
-	httpmock.RegisterResponder("POST", fmt.Sprintf("https://%s/%s/broken", twizo.GetHostForRegion(twizo.RegionCurrent), twizo.ClientAPIVersion),
-		httpmock.NewStringResponder(http.StatusConflict, `this is not json`))
+	httpmock.RegisterResponder(
+		"POST",
+		fmt.Sprintf("https://%s/%s/broken", twizo.GetHostForRegion(twizo.RegionCurrent), twizo.ClientAPIVersion),
+		httpmock.NewStringResponder(http.StatusConflict, `this is not json`),
+	)
 
 	apiURL, err := twizo.GetURLFor("/broken")
 	if err != nil {

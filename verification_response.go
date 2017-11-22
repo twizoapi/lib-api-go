@@ -1,11 +1,12 @@
 package twizo
 
 import (
-	"time"
-	"net/http"
 	"encoding/json"
+	"net/http"
+	"time"
 )
 
+// VerificationResponse struct that the server returns for a verification request
 type VerificationResponse struct {
 	applicationTag         string
 	bodyTemplate           string
@@ -58,7 +59,8 @@ type jsonVerificationResponse struct {
 	Links                  HATEOASLinks           `json:"_links"`
 }
 
-func (r *VerificationResponse) UnmarshalJSON(j []byte) error {
+// UnmarshalJSON unmarshals the json returned by the server into the VerificationResponse struct
+func (response *VerificationResponse) UnmarshalJSON(j []byte) error {
 	var jsonResponse = &jsonVerificationResponse{}
 
 	err := json.Unmarshal(j, &jsonResponse)
@@ -66,126 +68,146 @@ func (r *VerificationResponse) UnmarshalJSON(j []byte) error {
 		return err
 	}
 
-	r.copyFrom(jsonResponse)
-
-	return nil
+	return response.copyFrom(jsonResponse)
 }
 
-func (response *VerificationResponse) copyFrom (j *jsonVerificationResponse) (error) {
-	var err error  // default err is nil
+func (response *VerificationResponse) copyFrom(j *jsonVerificationResponse) error {
+	var err error // default err is nil
 
-	response.applicationTag         = j.ApplicationTag
-	response.bodyTemplate           = j.BodyTemplate
-	response.createdDateTime        = j.CreatedDateTime
-	response.dcs                    = j.Dcs
-	response.language               = j.Language
-	response.messageID              = j.MessageID
-	response.reasonCode             = j.ReasonCode
-	response.recipient              = j.Recipient
-	response.salesPrice             = j.SalesPrice
+	response.applicationTag = j.ApplicationTag
+	response.bodyTemplate = j.BodyTemplate
+	response.createdDateTime = j.CreatedDateTime
+	response.dcs = j.Dcs
+	response.language = j.Language
+	response.messageID = j.MessageID
+	response.reasonCode = j.ReasonCode
+	response.recipient = j.Recipient
+	response.salesPrice = j.SalesPrice
 	response.salesPriceCurrencyCode = j.SalesPriceCurrencyCode
-	response.sender                 = j.Sender
-	response.senderNpi              = j.SenderNpi
-	response.senderTon              = j.SenderTon
-	response.sessionID              = j.SessionID
-	response.statusMsg              = j.StatusMsg
-	response.statusCode             = j.StatusCode
-	response.tag                    = j.Tag
-	response.tokenLength            = j.TokenLength
-	response.tokenType              = j.TokenType
-	response.verificationType       = j.VerificationType
-	response.validity               = j.Validity
-	response.validUntilDateTime     = j.ValidUntilDateTime
-	response.links                  = j.Links
+	response.sender = j.Sender
+	response.senderNpi = j.SenderNpi
+	response.senderTon = j.SenderTon
+	response.sessionID = j.SessionID
+	response.statusMsg = j.StatusMsg
+	response.statusCode = j.StatusCode
+	response.tag = j.Tag
+	response.tokenLength = j.TokenLength
+	response.tokenType = j.TokenType
+	response.verificationType = j.VerificationType
+	response.validity = j.Validity
+	response.validUntilDateTime = j.ValidUntilDateTime
+	response.links = j.Links
 
 	return err
 }
 
-func (response VerificationResponse) GetApplicationTag() (string) {
+// GetApplicationTag gets the application tag set on the verification request
+func (response VerificationResponse) GetApplicationTag() string {
 	return response.applicationTag
 }
 
-func (response VerificationResponse) GetBodyTemplate() (string) {
+// GetBodyTemplate gets the body templates that was set on the verification request
+func (response VerificationResponse) GetBodyTemplate() string {
 	return response.bodyTemplate
 }
 
-func (response VerificationResponse) GetCreateDateTime() (time.Time) {
+// GetCreateDateTime gets the time.Time that the request was created
+func (response VerificationResponse) GetCreateDateTime() time.Time {
 	return response.createdDateTime
 }
 
-func (response VerificationResponse) GetDcs() (int) {
+// GetDcs gets the dcs of the verification request
+func (response VerificationResponse) GetDcs() int {
 	return response.dcs
 }
 
-func (response VerificationResponse) GetLanguage() (string) {
+// GetLanguage gets the language that the verification request was made in (not implemented yet)
+func (response VerificationResponse) GetLanguage() string {
 	return response.language
 }
 
-func (response VerificationResponse) GetMessageID() (string) {
+// GetMessageID gets the message Id of the verification request
+func (response VerificationResponse) GetMessageID() string {
 	return response.messageID
 }
 
-func (response VerificationResponse) GetReasonCode() (string) {
+// GetReasonCode get the reason code of the verification request
+func (response VerificationResponse) GetReasonCode() string {
 	return response.reasonCode
 }
 
-func (response VerificationResponse) GetRecipient() (Recipient) {
+// GetRecipient get the recipient of the verification
+func (response VerificationResponse) GetRecipient() Recipient {
 	return response.recipient
 }
 
-func (response VerificationResponse) GetSalesPrice() (*float32) {
+// GetSalesPrice get the sales price of the verification
+func (response VerificationResponse) GetSalesPrice() *float32 {
 	return response.salesPrice
 }
 
-func (response VerificationResponse) GetSalesPriceCurrencyCode() (*string) {
+// GetSalesPriceCurrencyCode get the currency code of the sales price
+func (response VerificationResponse) GetSalesPriceCurrencyCode() *string {
 	return response.salesPriceCurrencyCode
 }
 
-func (response VerificationResponse) GetSender() (string) {
+// GetSender get the sender
+func (response VerificationResponse) GetSender() string {
 	return response.sender
 }
 
-func (response VerificationResponse) GetSenderNpi() (int) {
+// GetSenderNpi get the senderNpi
+func (response VerificationResponse) GetSenderNpi() int {
 	return response.senderNpi
 }
 
-func (response VerificationResponse) GetSenderTon() (int) {
+// GetSenderTon get the senderTon
+func (response VerificationResponse) GetSenderTon() int {
 	return response.senderTon
 }
 
-func (response VerificationResponse) GetSessionID() (string) {
+// GetSessionID get the session id
+func (response VerificationResponse) GetSessionID() string {
 	return response.sessionID
 }
 
-func (response VerificationResponse) GetStatusMsg() (string) {
+// GetStatusMsg get the status message
+func (response VerificationResponse) GetStatusMsg() string {
 	return response.statusMsg
 }
 
-func (response VerificationResponse) GetStatusCode() (VerificationStatusCode) {
+// GetStatusCode get the status code
+func (response VerificationResponse) GetStatusCode() VerificationStatusCode {
 	return response.statusCode
 }
 
-func (response VerificationResponse) GetTag() (string) {
+// GetTag get the application tag
+func (response VerificationResponse) GetTag() string {
 	return response.tag
 }
 
-func (response VerificationResponse) GetTokenLength() (string) {
+// GetTokenLength get the token length
+func (response VerificationResponse) GetTokenLength() string {
 	return response.tokenLength
 }
 
-func (response VerificationResponse) GetTokenType() (string) {
+// GetTokenType get the token type
+func (response VerificationResponse) GetTokenType() string {
 	return response.tokenLength
 }
 
-func (response VerificationResponse) GetVerificationType() (string) {
+// GetVerificationType get the verification type
+func (response VerificationResponse) GetVerificationType() string {
 	return response.verificationType
 }
 
-func (response VerificationResponse) GetValidity() (int) {
+// GetValidity get the validity in seconds
+func (response VerificationResponse) GetValidity() int {
 	return response.validity
 }
 
-func (response VerificationResponse) GetValidUntilDateTime() (time.Time) {
+// GetValidUntilDateTime get the validity in time.Time
+func (response VerificationResponse) GetValidUntilDateTime() time.Time {
 	return response.validUntilDateTime
 }
 
@@ -209,7 +231,7 @@ func (response *VerificationResponse) Status() error {
 	return err
 }
 
-// Verify
+// Verify verifies the token entered for a verification
 func (response *VerificationResponse) Verify(token string) error {
 	newResponse := &VerificationResponse{}
 
@@ -230,13 +252,17 @@ func (response *VerificationResponse) Verify(token string) error {
 
 	switch apiError := err.(type) {
 	case *APIError:
-		if apiError.Status == http.StatusUnprocessableEntity && VerificationStatusCode(apiError.ErrorCode) == VerificationTokenInvalid {
+		if apiError.Status == http.StatusUnprocessableEntity &&
+			VerificationStatusCode(apiError.ErrorCode) == VerificationTokenInvalid {
 			response.statusCode = VerificationTokenInvalid
-		} else if apiError.Status == http.StatusLocked && VerificationStatusCode(apiError.ErrorCode) == VerificationTokenExpired {
+		} else if apiError.Status == http.StatusLocked &&
+			VerificationStatusCode(apiError.ErrorCode) == VerificationTokenExpired {
 			response.statusCode = VerificationTokenExpired
-		} else if apiError.Status == http.StatusLocked && VerificationStatusCode(apiError.ErrorCode) == VerificationTokenAlreadyVerified {
+		} else if apiError.Status == http.StatusLocked &&
+			VerificationStatusCode(apiError.ErrorCode) == VerificationTokenAlreadyVerified {
 			response.statusCode = VerificationTokenAlreadyVerified
-		} else if apiError.Status == http.StatusLocked && VerificationStatusCode(apiError.ErrorCode) == VerificationTokenFailed {
+		} else if apiError.Status == http.StatusLocked &&
+			VerificationStatusCode(apiError.ErrorCode) == VerificationTokenFailed {
 			response.statusCode = VerificationTokenFailed
 		} else {
 			// undocumented response, error out
@@ -253,33 +279,37 @@ func (response *VerificationResponse) Verify(token string) error {
 	return err
 }
 
+// IsTokenUnknown is a helper function to check the token status is unknown
 func (response VerificationResponse) IsTokenUnknown() bool {
-	return (response.statusCode == VerificationTokenUnknown)
+	return response.statusCode == VerificationTokenUnknown
 }
 
+// IsTokenSuccess is a helper function to check if the token status is successful
 func (response VerificationResponse) IsTokenSuccess() bool {
-	return (response.statusCode == VerificationTokenSuccess)
+	return response.statusCode == VerificationTokenSuccess
 }
 
+// IsTokenInvalid is a helper function to check if the token status is invalid
 func (response VerificationResponse) IsTokenInvalid() bool {
-	return (response.statusCode == VerificationTokenInvalid)
+	return response.statusCode == VerificationTokenInvalid
 }
 
+// IsTokenExpired is a helper function to check if the token has expired
 func (response VerificationResponse) IsTokenExpired() bool {
-	return (response.statusCode == VerificationTokenExpired)
+	return response.statusCode == VerificationTokenExpired
 }
 
+// IsTokenAlreadyVerified is a helper function to check if that token has already been verified
 func (response VerificationResponse) IsTokenAlreadyVerified() bool {
-	return (response.statusCode == VerificationTokenAlreadyVerified)
+	return response.statusCode == VerificationTokenAlreadyVerified
 }
 
+// IsTokenFailed is a helper function to check if the token has failed to validate
 func (response VerificationResponse) IsTokenFailed() bool {
-	return (response.statusCode == VerificationTokenFailed)
+	return response.statusCode == VerificationTokenFailed
 }
 
-/**
- * Stringify a validation response
- */
+// String stringify a validation response
 func (response VerificationResponse) String() string {
 	ret, _ := json.Marshal(response)
 	return string(ret)

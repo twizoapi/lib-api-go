@@ -6,58 +6,65 @@ import (
 )
 
 type smsSubmitType int
-type smsStatusCode int
 
 const (
 	// SmsSubmitTypeSimple (default) use simple submit
 	// (auto body splitting auto udh / dcs setting)
-	SmsSubmitTypeSimple             smsSubmitType = 0
+	SmsSubmitTypeSimple smsSubmitType = 0
 
 	// SmsSubmitTypeAdvanced will not autosplit and can
 	// also send binary messages
-	SmsSubmitTypeAdvanced        	smsSubmitType = 1
+	SmsSubmitTypeAdvanced smsSubmitType = 1
+)
 
+// SmsStatusCode the status code of the sms
+type SmsStatusCode int
+const (
 	// SmsStatusCodeNoStatus no status for message
-	SmsStatusCodeNoStatus    	smsStatusCode = 0
+	SmsStatusCodeNoStatus SmsStatusCode = 0
 
 	// SmsStatusCodeDelivered message delivered
-	SmsStatusCodeDelivered   	smsStatusCode = 1
+	SmsStatusCodeDelivered SmsStatusCode = 1
 
 	// SmsStatusCodeRejected message rejected
-	SmsStatusCodeRejected    	smsStatusCode = 2
+	SmsStatusCodeRejected SmsStatusCode = 2
 
 	// SmsStatusCodeExpired message expired
-	SmsStatusCodeExpired     	smsStatusCode = 3
+	SmsStatusCodeExpired SmsStatusCode = 3
 
 	// SmsStatusCodeEnroute message enroute
-	SmsStatusCodeEnroute     	smsStatusCode = 4
+	SmsStatusCodeEnroute SmsStatusCode = 4
 
 	// SmsStatusCodeBuffered message buffered
-	SmsStatusCodeBuffered    	smsStatusCode = 5
+	SmsStatusCodeBuffered SmsStatusCode = 5
 
 	// SmsStatusCodeAccepted message accepted
-	SmsStatusCodeAccepted    	smsStatusCode = 6
+	SmsStatusCodeAccepted SmsStatusCode = 6
 
 	// SmsStatusCodeUndelivered message undelivered
-	SmsStatusCodeUndelivered 	smsStatusCode = 7
+	SmsStatusCodeUndelivered SmsStatusCode = 7
 
 	// SmsStatusCodeDeleted message deleted
-	SmsStatusCodeDeleted     	smsStatusCode = 8
+	SmsStatusCodeDeleted SmsStatusCode = 8
 
 	// SmsStatusCodeUnknown message status unkown
-	SmsStatusCodeUnknown     	smsStatusCode = 9
+	SmsStatusCodeUnknown SmsStatusCode = 9
 )
 
 // NewSmsRequest creates a new smsrequest struct
-func NewSmsRequest(recipients []Recipient, body interface{}, sender string) *SmsRequest {
+func NewSmsRequest(recipients []Recipient, body interface{}, sender string) (*SmsRequest, error) {
 	params := &SmsRequest{
 		recipients: recipients,
 		submitType: SmsSubmitTypeSimple,
 	}
-	params.SetSender(sender)
-	params.SetBody(body)
+	if err := params.SetSender(sender); err != nil {
+		return nil, err
+	}
+	if err := params.SetBody(body); err != nil {
+		return nil, err
+	}
 
-	return params
+	return params, nil
 }
 
 // SmsStatus retrieves the status of a message by ID
@@ -89,5 +96,10 @@ func SmsSubmit(recipients interface{}, body interface{}, sender string) (*SmsRes
 	if err != nil {
 		return nil, err
 	}
-	return NewSmsRequest(r, body, sender).Submit()
+	sms, err := NewSmsRequest(r, body, sender)
+	if err != nil {
+		return nil, err
+	}
+
+	return sms.Submit()
 }

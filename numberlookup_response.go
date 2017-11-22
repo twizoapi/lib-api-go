@@ -1,12 +1,13 @@
 package twizo
 
 import (
+	"encoding/json"
+	"net/http"
 	"net/url"
 	"time"
-	"net/http"
-	"encoding/json"
 )
 
+// NumberLookupResponse struct
 type NumberLookupResponse struct {
 	applicationTag         string
 	callbackURL            *url.URL
@@ -38,7 +39,7 @@ type jsonNumberLookupResponse struct {
 	CountryCode            *string                `json:"countryCode,omitempty"`
 	CreateDateTime         time.Time              `json:"createdDateTime,omitempty"`
 	Imsi                   *string                `json:"imsi,omitempty"`
-    	Ported                 string                 `json:"isPorted,omitempty"`
+	Ported                 string                 `json:"isPorted,omitempty"`
 	Roaming                string                 `json:"isRoaming,omitempty"`
 	MessageID              string                 `json:"messageId"`
 	Msc                    *string                `json:"msc,omitempty"`
@@ -58,7 +59,8 @@ type jsonNumberLookupResponse struct {
 	Links                  HATEOASLinks           `json:"_links"`
 }
 
-func (r *NumberLookupResponse) UnmarshalJSON(j []byte) error {
+// UnmarshalJSON the json response to struct
+func (response *NumberLookupResponse) UnmarshalJSON(j []byte) error {
 	var jsonResponse = &jsonNumberLookupResponse{}
 
 	err := json.Unmarshal(j, &jsonResponse)
@@ -66,47 +68,44 @@ func (r *NumberLookupResponse) UnmarshalJSON(j []byte) error {
 		return err
 	}
 
-	r.copyFrom(jsonResponse)
+	return response.copyFrom(jsonResponse)
+}
+
+func (response *NumberLookupResponse) copyFrom(j *jsonNumberLookupResponse) error {
+
+	response.applicationTag = j.ApplicationTag
+	response.callbackURL = j.CallbackURL
+	response.createDateTime = j.CreateDateTime
+	response.imsi = j.Imsi
+	response.ported = j.Ported
+	response.roaming = j.Roaming
+	response.messageID = j.MessageID
+	response.msc = j.Msc
+	response.networkCode = j.NetworkCode
+	response.number = j.Number
+	response.operator = j.Operator
+	response.reasonCode = j.ReasonCode
+	response.resultTimestamp = j.ResultTimestamp
+	response.resultType = j.ResultType
+	response.salesPrice = j.SalesPrice
+	response.salesPriceCurrencyCode = j.SalesPriceCurrencyCode
+	response.statusMsg = j.StatusMsg
+	response.statusCode = j.StatusCode
+	response.tag = j.Tag
+	response.validity = j.Validity
+	response.validUntilDateTime = j.ValidUntilDateTime
+	response.links = j.Links
 
 	return nil
 }
 
-func (response *NumberLookupResponse) copyFrom (j *jsonNumberLookupResponse) (error) {
-	var err error  // default err is nil
-
-	response.applicationTag 	= j.ApplicationTag
-	response.callbackURL 		= j.CallbackURL
-	response.createDateTime 	= j.CreateDateTime
-	response.imsi			= j.Imsi
-	response.ported                 = j.Ported
-	response.roaming                = j.Roaming
-	response.messageID		= j.MessageID
-	response.msc			= j.Msc
-	response.networkCode            = j.NetworkCode
-	response.number			= j.Number
-	response.operator               = j.Operator
-	response.reasonCode             = j.ReasonCode
-	response.resultTimestamp	= j.ResultTimestamp
-	response.resultType             = j.ResultType
-	response.salesPrice             = j.SalesPrice
-	response.salesPriceCurrencyCode = j.SalesPriceCurrencyCode
-	response.statusMsg              = j.StatusMsg
-	response.statusCode             = j.StatusCode
-	response.tag                    = j.Tag
-	response.validity               = j.Validity
-	response.validUntilDateTime     = j.ValidUntilDateTime
-	response.links                  = j.Links
-
-	return err
-}
-
-// Status
-func (n *NumberLookupResponse) Status() (error) {
-	response := &NumberLookupResponse{}
+// Status requests the status of a numberlookup
+func (response *NumberLookupResponse) Status() error {
+	newNumberLookupResponse := &NumberLookupResponse{}
 
 	err := GetClient(RegionCurrent, APIKey).Call(
 		http.MethodGet,
-		&n.links.Self.Href,
+		&response.links.Self.Href,
 		nil,
 		http.StatusOK,
 		response,
@@ -114,103 +113,122 @@ func (n *NumberLookupResponse) Status() (error) {
 
 	if err == nil {
 		// no error use response to override ourselves
-		*n = *response
+		*newNumberLookupResponse = *response
 	}
 
 	return err
 }
 
-func (n NumberLookupResponse) GetApplicationTag() (string) {
-	return n.applicationTag
+// GetApplicationTag gets the application tag of the response
+func (response NumberLookupResponse) GetApplicationTag() string {
+	return response.applicationTag
 }
 
-func (n NumberLookupResponse) GetCallbackURL() (*url.URL) {
-	return n.callbackURL
+// GetCallbackURL gets the callback url of the response
+func (response NumberLookupResponse) GetCallbackURL() *url.URL {
+	return response.callbackURL
 }
 
-func (n NumberLookupResponse) GetCreateDateTime() (time.Time) {
-	return n.createDateTime
+// GetCreateDateTime gets the created time
+func (response NumberLookupResponse) GetCreateDateTime() time.Time {
+	return response.createDateTime
 }
 
-func (n NumberLookupResponse) GetImsi() (*string) {
-	return n.imsi
+// GetImsi gets the imsi of the response
+func (response NumberLookupResponse) GetImsi() *string {
+	return response.imsi
 }
 
-func (n NumberLookupResponse) GetPorted() (string) {
-	return n.ported
+// GetPorted gets ported of the response
+func (response NumberLookupResponse) GetPorted() string {
+	return response.ported
 }
 
-func (n NumberLookupResponse) GetRoaming() (string) {
-	return n.roaming
+// GetRoaming gets roaming of the response
+func (response NumberLookupResponse) GetRoaming() string {
+	return response.roaming
 }
 
-func (n NumberLookupResponse) GetMessageID() (string) {
-	return n.messageID
+// GetMessageID gets the message id of the response
+func (response NumberLookupResponse) GetMessageID() string {
+	return response.messageID
 }
 
-func (n NumberLookupResponse) GetMsc() (*string) {
-	return n.msc
+// GetMsc gets the msc of the response
+func (response NumberLookupResponse) GetMsc() *string {
+	return response.msc
 }
 
-func (n NumberLookupResponse) GetNetworkCode() (*int) {
-	return n.networkCode
+// GetNetworkCode gets the networkCode of the response
+func (response NumberLookupResponse) GetNetworkCode() *int {
+	return response.networkCode
 }
 
-func (n NumberLookupResponse) GetNumber() (string) {
-	return n.number
+// GetNumber gets the number of the response
+func (response NumberLookupResponse) GetNumber() string {
+	return response.number
 }
 
-func (n NumberLookupResponse) GetOperator() (*string) {
-	return n.operator
+// GetOperator gets the operator of the response
+func (response NumberLookupResponse) GetOperator() *string {
+	return response.operator
 }
 
-func (n NumberLookupResponse) GetReasonCode() (*int) {
-	return n.reasonCode
+// GetReasonCode gets the reasonCode of the response
+func (response NumberLookupResponse) GetReasonCode() *int {
+	return response.reasonCode
 }
 
-func (n NumberLookupResponse) GetResultType() (int) {
-	return n.resultType
+// GetResultType get the resultType of the response
+func (response NumberLookupResponse) GetResultType() int {
+	return response.resultType
 }
 
-func (n NumberLookupResponse) GetSalesPrice() (*float32) {
-	return n.salesPrice
+// GetSalesPrice gets the salesprice of the response
+func (response NumberLookupResponse) GetSalesPrice() *float32 {
+	return response.salesPrice
 }
 
-func (n NumberLookupResponse) GetSalesPriceCurrencyCode() (*string) {
-	return n.salesPriceCurrencyCode
+// GetSalesPriceCurrencyCode gets the currency of the salesprice of the response
+func (response NumberLookupResponse) GetSalesPriceCurrencyCode() *string {
+	return response.salesPriceCurrencyCode
 }
 
-func (n NumberLookupResponse) GetStatusMsg() (string) {
-	return n.statusMsg
+// GetStatusMsg gets the status of the response
+func (response NumberLookupResponse) GetStatusMsg() string {
+	return response.statusMsg
 }
 
-func (n NumberLookupResponse) GetStatusCode() (NumberLookupStatusCode) {
-	return n.statusCode
+// GetStatusCode gets the statuscode of the response
+func (response NumberLookupResponse) GetStatusCode() NumberLookupStatusCode {
+	return response.statusCode
 }
 
-func (n NumberLookupResponse) GetTag() (*string) {
-	return n.tag
+// GetTag gets the tag of the response
+func (response NumberLookupResponse) GetTag() *string {
+	return response.tag
 }
 
-func (n NumberLookupResponse) GetResultTimeStamp() (string) {
-	return n.resultTimestamp
+// GetResultTimeStamp of the response
+func (response NumberLookupResponse) GetResultTimeStamp() string {
+	return response.resultTimestamp
 }
 
-func (n NumberLookupResponse) GetValidity() (int) {
-	return n.validity
+// GetValidity gets the validity of the response
+func (response NumberLookupResponse) GetValidity() int {
+	return response.validity
 }
 
-func (n NumberLookupResponse) GetValidUntillDateTime() (time.Time) {
-	return n.validUntilDateTime
+// GetValidUntillDateTime gets the valid untill time of the response
+func (response NumberLookupResponse) GetValidUntillDateTime() time.Time {
+	return response.validUntilDateTime
 }
 
 type numberLookupEmbedded struct {
 	Items *[]NumberLookupResponse `json:"items"`
 }
 
-//
-// Request status of all embedded objects
-//
+// Status requests the status of all embedded numberlookups
 func (v *numberLookupEmbedded) Status() error {
 	// we potentially double memory here
 	newItems := []NumberLookupResponse{}
@@ -226,6 +244,7 @@ func (v *numberLookupEmbedded) Status() error {
 	return nil
 }
 
+// NumberLookupResponses struct
 type NumberLookupResponses struct {
 	Responses *[]NumberLookupResponse
 }
@@ -236,7 +255,8 @@ type jsonNumberLookupResponses struct {
 	Total    int                  `json:"total_items"`
 }
 
-func (r *NumberLookupResponses) UnmarshalJSON(j []byte) error {
+// UnmarshalJSON unmarshals from json to struct
+func (responses *NumberLookupResponses) UnmarshalJSON(j []byte) error {
 	var jsonResponse = &jsonNumberLookupResponses{}
 
 	err := json.Unmarshal(j, &jsonResponse)
@@ -244,24 +264,20 @@ func (r *NumberLookupResponses) UnmarshalJSON(j []byte) error {
 		return err
 	}
 
-	r.Responses = jsonResponse.Embedded.Items
+	responses.Responses = jsonResponse.Embedded.Items
 
 	return nil
 }
 
-//
-// Get all messages
-//
-func (r NumberLookupResponses) GetItems() []NumberLookupResponse {
-	return *r.Responses
+// GetItems returns all numberlookup responses
+func (responses NumberLookupResponses) GetItems() []NumberLookupResponse {
+	return *responses.Responses
 }
 
-//
-// Request status of all embedded objects
-//
-func (r *NumberLookupResponses) Status() error {
+// Status requests the status of all numberlookup responses
+func (responses *NumberLookupResponses) Status() error {
 	newItems := []NumberLookupResponse{}
-	for _, item := range *r.Responses {
+	for _, item := range *responses.Responses {
 		err := item.Status()
 		if err != nil {
 			return err
@@ -269,6 +285,6 @@ func (r *NumberLookupResponses) Status() error {
 		newItems = append(newItems, item)
 	}
 	// all went well update Items
-	r.Responses = &newItems
+	responses.Responses = &newItems
 	return nil
 }

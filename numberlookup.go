@@ -5,8 +5,10 @@ import (
 	"net/http"
 )
 
+// NumberLookupStatusCode is actually an int
 type NumberLookupStatusCode int
 
+// Mapping of numberlookup statis codes
 const (
 	NumberLookupStatusCodeNoStatus    NumberLookupStatusCode = 0
 	NumberLookupStatusCodeDelivered   NumberLookupStatusCode = 1
@@ -20,8 +22,7 @@ const (
 	NumberLookupStatusCodeUnknown     NumberLookupStatusCode = 9
 )
 
-
-// Create a new verificationParam using a recipient (the only required var)
+// NewNumberLookupRequest creates a new verificationParam using a recipient (the only required var)
 func NewNumberLookupRequest(numbers []Recipient) *NumberLookupRequest {
 	params := &NumberLookupRequest{
 		numbers: numbers,
@@ -29,6 +30,7 @@ func NewNumberLookupRequest(numbers []Recipient) *NumberLookupRequest {
 	return params
 }
 
+// NumberLookupSubmit creates a new numberlookup and submits it
 func NumberLookupSubmit(numbers interface{}) (*NumberLookupResponses, error) {
 	r, err := convertRecipients(numbers)
 	if err != nil {
@@ -37,6 +39,7 @@ func NumberLookupSubmit(numbers interface{}) (*NumberLookupResponses, error) {
 	return NewNumberLookupRequest(r).Submit()
 }
 
+// NumberLookupStatus creates a new numberlookup with id and requests the status
 func NumberLookupStatus(messageID string) (*NumberLookupResponse, error) {
 	apiURL, err := GetURLFor(fmt.Sprintf("numberlookup/submit/%s", messageID))
 	if err != nil {
