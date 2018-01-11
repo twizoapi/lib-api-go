@@ -45,7 +45,7 @@ type jsonSmsRequest struct {
 
 // MarshalJSON is used to convert SmsRequest to json
 func (request *SmsRequest) MarshalJSON() ([]byte, error) {
-	jsonSmsRequest := jsonSmsRequest{
+	jsonRequest := jsonSmsRequest{
 		Recipients:        request.recipients,
 		Body:              string(request.body),
 		Sender:            request.sender,
@@ -60,21 +60,21 @@ func (request *SmsRequest) MarshalJSON() ([]byte, error) {
 
 	// set the callback url if we need one, it still might be empty
 	if request.resultType == ResultTypeCallback || request.resultType == ResultTypeCallbackPolling {
-		jsonSmsRequest.CallbackURL = request.callbackURL
+		jsonRequest.CallbackURL = request.callbackURL
 	}
 
 	if request.submitType == SmsSubmitTypeAdvanced {
 		// if request is advanced, send dcs and udh too
-		jsonSmsRequest.Dcs = request.dcs
-		jsonSmsRequest.Udh = request.udh
+		jsonRequest.Dcs = request.dcs
+		jsonRequest.Udh = request.udh
 
 		// if the request is binary we hex encode the body
 		if request.IsBinary() {
-			jsonSmsRequest.Body = hex.EncodeToString(request.body)
+			jsonRequest.Body = hex.EncodeToString(request.body)
 		}
 	}
 
-	return json.Marshal(jsonSmsRequest)
+	return json.Marshal(jsonRequest)
 }
 
 // IsBinary returns if message is binary or not
