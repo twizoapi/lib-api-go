@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	twizo "github.com/twizoapi/lib-api-go"
 	"github.com/twizoapi/lib-api-go/examples"
 )

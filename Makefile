@@ -1,15 +1,12 @@
+#!/usr/bin/env make -rRf
+
 PACKAGE      = github.com/twizoapi/lib-api-go
-GOPATH       = $(CURDIR)/.gopath~
+GOPATH       = $(CURDIR)/.gopath
 BASE         = $(GOPATH)/src/$(PACKAGE)
 BIN          = $(GOPATH)/bin
+VERBOSE      = 0
 
-GO_SRC          := $(wildcard $(CURDIR)/*.go)
-GO_EXAMPLES_SRC := $(wildcard $(CURDIR)/examples/*/*.go)
-GO_EXAMPLES_BIN := $(addprefix bin/,$(notdir $(GO_EXAMPLES_SRC:.go=)))
-
-VERBOSE = 0
-Q = $(if $(filter 1,${VERBOSE}),,@)
-M = $(shell printf "\033[34;1m▶\033[0m")
+## internal functions
 
 # Internal functions to find X in A by position and return Y from B (on same position)
 # mapping GO_EXAMPLES_BIN -> GO_EXAMPLES_SRC
@@ -17,6 +14,14 @@ _pos = $(if $(findstring $1,$2),$(call _pos,$1,\
        $(wordlist 2,$(words $2),$2),x $3),$3)
 pos = $(words $(call _pos,$1,$2))
 lookup = $(word $(call pos,$1,$2),$3)
+lastdir = $(lastword $(subst /, ,$(dir $1)))
+Q = $(if $(filter 1,${VERBOSE}),,@)
+M = $(shell printf "\033[34;1m▶\033[0m")
+
+# selection of source and destinations
+GO_SRC          := $(wildcard $(CURDIR)/*.go)
+GO_EXAMPLES_SRC := $(wildcard $(CURDIR)/examples/*/main.go)
+GO_EXAMPLES_BIN := $(addprefix bin/,$(foreach dir,$(GO_EXAMPLES_SRC),$(call lastdir,$(dir))))
 
 # If we don't set this some stacks may not be complete when encountering race
 # conditions. Uses a bit more memory, but we usually have enough of that.
@@ -33,6 +38,7 @@ default: test
 $(BASE): ; $(info $(M) setting GOPATH…)
 	$(Q) mkdir -p $(dir $@)
 	$(Q) ln -sf $(CURDIR) $@
+	$(Q) @$(info GOPATH is [${GOPATH}])
 
 # Set up go lint
 GO_LINT = $(BIN)/golint
@@ -95,6 +101,8 @@ PHONY += examples
 examples: $(GO_EXAMPLES_BIN)
 
 $(GO_EXAMPLES_BIN): $(GO_EXAMPLES_SRC) | $(BASE) ; $(info $(M) building $@…)
+	# $(Q) echo Building $@
+	# $(Q) echo From $(call lookup,$@,$(GO_EXAMPLES_BIN),$(GO_EXAMPLES_SRC))
 	$(Q) go build -o $@ $(call lookup,$@,$(GO_EXAMPLES_BIN),$(GO_EXAMPLES_SRC))
 
 # Declare the contents of the .PHONY variable as phony.  We keep that
