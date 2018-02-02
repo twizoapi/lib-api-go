@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -72,8 +73,8 @@ const (
 	ResultTypeCallbackPolling ResultType = 3
 )
 
-// Logger contains the logger
-var Logger = InitLoggers()
+// DebugLogger contains the debug logger
+var DebugLogger = log.New(ioutil.Discard, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 var regionUrls = map[APIRegion]string{
 	APIRegionAsia:    "api-asia-01.twizo.com",
@@ -143,9 +144,9 @@ func (c *HTTPClient) Call(method string, url *url.URL, request Request, expectCo
 	}
 
 	if requestBody.Len() > 0 {
-		Logger.Debug().Printf("Request %v [%v] body %s", req.Method, req.URL.String(), requestBody)
+		DebugLogger.Printf("Request %v [%v] body %s", req.Method, req.URL.String(), requestBody)
 	} else {
-		Logger.Debug().Printf("Request %v [%v]", req.Method, req.URL.String())
+		DebugLogger.Printf("Request %v [%v]", req.Method, req.URL.String())
 	}
 
 	// actually do the request and parse errors if any
@@ -186,7 +187,6 @@ func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error 
 	res, err := c.HTTPClient.Do(req)
 
 	if err != nil {
-		Logger.Error().Printf("Request to Twizo failed: %v", err)
 		return err
 	}
 	defer res.Body.Close() // nolint: errcheck
@@ -194,14 +194,13 @@ func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error 
 	// might want to use json.Decoder instead of ioutl.ReadAll -> sending to Unmarshal
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		Logger.Error().Printf("Cannot parse Twizo response: %v", err)
 		return err
 	}
 
 	if len(resBody) > 0 {
-		Logger.Debug().Printf("Response in [%v] with [%d] body %s", time.Since(start), res.StatusCode, resBody)
+		DebugLogger.Printf("Response in [%v] with [%d] body %s", time.Since(start), res.StatusCode, resBody)
 	} else {
-		Logger.Debug().Printf("Response in [%v] with [%d]", time.Since(start), res.StatusCode)
+		DebugLogger.Printf("Response in [%v] with [%d]", time.Since(start), res.StatusCode)
 	}
 
 	// check if there was a problem

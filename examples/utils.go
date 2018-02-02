@@ -71,11 +71,8 @@ func Main() {
 	SuppliedRegion = *region
 
 	if *isVerbose {
-		twizo.Logger.Get(twizo.Debug).SetOutput(os.Stdout)
-		twizo.Logger.Get(twizo.Info).SetOutput(os.Stdout)
+		twizo.DebugLogger.SetOutput(os.Stdout)
 	}
-
-	twizo.Logger.Get(twizo.Warning).SetOutput(os.Stderr)
 }
 
 func AskForInput(messageStr string, defaultStr string) (string, error) {
