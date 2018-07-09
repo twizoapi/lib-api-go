@@ -1,22 +1,22 @@
-package main;
+package main
 
 import (
-	twizo "github.com/twizoapi/lib-api-go"
-	"github.com/twizoapi/lib-api-go/examples"
 	"fmt"
 	"time"
+
+	twizo "github.com/twizoapi/lib-api-go"
+	"github.com/twizoapi/lib-api-go/examples"
 )
 
 func main() {
-	utils.Main();
+	utils.Main()
 
 	twizo.APIKey = utils.SuppliedApiKey
 	twizo.RegionCurrent = twizo.APIRegion(utils.SuppliedRegion)
 
 	//
-	// Note: error handeling was abreviated for example's sake
+	// Note: error handling was abbreviated for example's sake
 	//
-
 	phone, _ := utils.AskForInput("Enter phone number [6100000000]: ", "6100000000")
 
 	numberLookupRequest := twizo.NewNumberLookupRequest([]twizo.Recipient{twizo.Recipient(phone)})
@@ -32,7 +32,7 @@ func main() {
 	maxPolls := 10
 	for i := 1; i <= maxPolls; i++ {
 		fmt.Printf("Polling [%d/%d]\n", i, maxPolls)
-		numberLookupResult, err := twizo.NumberLookupPollStatus();
+		numberLookupResult, err := twizo.NumberLookupPollStatus()
 		if err != nil {
 			panic(err)
 		}

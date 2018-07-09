@@ -1,24 +1,23 @@
-package main;
+package main
 
 import (
+	"fmt"
 	twizo "github.com/twizoapi/lib-api-go"
 	"github.com/twizoapi/lib-api-go/examples"
-	"fmt"
 	"time"
 )
 
 func main() {
-	utils.Main();
+	utils.Main()
 
 	twizo.APIKey = utils.SuppliedApiKey
 	twizo.RegionCurrent = twizo.APIRegion(utils.SuppliedRegion)
 
 	//
-	// Note: error handeling was abreviated for example's sake
+	// Note: error handling was abbreviated for example's sake
 	//
 
 	phone, _ := utils.AskForInput("Enter phone number [6100000000]: ", "6100000000")
-
 
 	// can send to multiple recipients below
 	numberlookupResponse, err := twizo.NumberLookupSubmit(phone)

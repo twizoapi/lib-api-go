@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -31,42 +32,56 @@ import (
 	"time"
 )
 
+// APIRegion the region to call
 type APIRegion string
 
 // ResultType how to we want the results
 type ResultType int
+
+// All api regions
 const (
 	APIRegionAsia    APIRegion = "asia"
 	APIRegionEU      APIRegion = "eu"
 	APIRegionDefault APIRegion = "default"
+)
 
+// All client variables
+const (
 	ClientAPIVersion string = "v1"
 	ClientLibVersion string = "0.1.0"
 	ClientLibName    string = "Twizo-go-lib"
 	ClientAuthUser   string = "twizo"
+)
 
+const (
 	defaultHTTPTimeout = 80 * time.Second
+)
 
+// All result types
+const (
 	// ResultTypeNone (default)
-	ResultTypeNone               ResultType = 0
+	ResultTypeNone ResultType = 0
 
 	// ResultTypeCallback send result to callbackURL (via post)
-	ResultTypeCallback           ResultType = 1
+	ResultTypeCallback ResultType = 1
 
 	// ResultTypePolling we want to poll for the results
-	ResultTypePolling            ResultType = 2
+	ResultTypePolling ResultType = 2
 
 	// ResultTypeCallbackPolling (use both SmsResultTypeCallback
 	// and SmsResultTypePolling)
-	ResultTypeCallbackPolling    ResultType = 3
+	ResultTypeCallbackPolling ResultType = 3
 )
 
-var Logger = InitLoggers()
+// DebugLogger contains the debug logger
+var DebugLogger = log.New(ioutil.Discard, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
+
 var regionUrls = map[APIRegion]string{
 	APIRegionAsia:    "api-asia-01.twizo.com",
 	APIRegionEU:      "api-eu-01.twizo.com",
 	APIRegionDefault: "api-eu-01.twizo.com",
 }
+
 var httpClient = &http.Client{Timeout: HTTPClientTimeout}
 var httpClientUserAgent = fmt.Sprintf(
 	"%s/%s Go/%s/%s/%s",
@@ -77,63 +92,41 @@ var httpClientUserAgent = fmt.Sprintf(
 	runtime.GOOS,
 )
 
-// posible to override these settings
+// APIKey the api key : possible to override this setting
 var APIKey string
-var RegionCurrent      = APIRegionDefault
-var HTTPClientTimeout  = defaultHTTPTimeout
 
+// RegionCurrent the current region : possible to override this setting
+var RegionCurrent = APIRegionDefault
+
+// HTTPClientTimeout the current timeout on http calls
+var HTTPClientTimeout = defaultHTTPTimeout
+
+// Recipient the recipient
 type Recipient string
 
+// Request interface
 type Request interface {
 }
 
+// Response interface
 type Response interface {
 	UnmarshalJSON(data []byte) error
 }
 
+// Client interface
 type Client interface {
 	Call(method string, path string, request Request, v interface{}) error
 }
 
+// HTTPClient is the actual http client
 type HTTPClient struct {
 	Region     APIRegion
 	Key        string
 	HTTPClient *http.Client
 }
 
-func (c *HTTPClient) Call(method string, url *url.URL, request Request, expectCode int, v interface{}) error {
-	// convert request to body
-	requestBody := bytes.NewBuffer(nil)
-	if request != nil {
-		body, err := json.Marshal(request)
-		if err != nil {
-			return err
-		}
-
-		requestBody.Write([]byte(body))
-	}
-
-	// create new request
-	req, err := c.NewRequest(method, url, requestBody)
-	if err != nil {
-		return err
-	}
-
-	if requestBody.Len() > 0 {
-		Logger.Debug().Printf("Request %v [%v] body %s", req.Method, req.URL.String(), requestBody)
-	} else {
-		Logger.Debug().Printf("Request %v [%v]", req.Method, req.URL.String())
-	}
-
-	// actually do the request and parse errors if any
-	if err := c.do(req, expectCode, v); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *HTTPClient) NewRequest(method string, url *url.URL, body io.Reader) (*http.Request, error) {
+// NewRequest creates a new request, this allows it to be tested [todo: refactor]
+func (c HTTPClient) NewRequest(method string, url *url.URL, body io.Reader) (*http.Request, error) {
 
 	if url.Host == "" {
 		url.Host = GetHostForRegion(c.Region)
@@ -153,43 +146,77 @@ func (c *HTTPClient) NewRequest(method string, url *url.URL, body io.Reader) (*h
 	return req, nil
 }
 
+// Call performs the actual call on the client
+func (c *HTTPClient) Call(method string, url *url.URL, request Request, expectCode int, v interface{}) error {
+	// convert request to body
+	requestBody := bytes.NewBuffer(nil)
+	if request != nil {
+		body, err := json.Marshal(request)
+		if err != nil {
+			return err
+		}
+
+		requestBody.Write([]byte(body))
+	}
+
+	// create new request
+	req, err := c.NewRequest(method, url, requestBody)
+	if err != nil {
+		return err
+	}
+
+	if requestBody.Len() > 0 {
+		DebugLogger.Printf("Request %v [%v] body %s", req.Method, req.URL.String(), requestBody)
+	} else {
+		DebugLogger.Printf("Request %v [%v]", req.Method, req.URL.String())
+	}
+
+	// actually do the request and parse errors if any
+	if err := c.do(req, expectCode, v); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Do is used by Call to execute an API request and parse the response. It uses
 // the backend's HTTP client to execute the request and unmarshals the response
 // into v. It also handles unmarshaling errors returned by the API.
-func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error {
+func (c *HTTPClient) do(request *http.Request, expectCode int, response interface{}) error {
 	start := time.Now()
 
-	res, err := c.HTTPClient.Do(req)
+	res, err := c.HTTPClient.Do(request)
 
 	if err != nil {
-		Logger.Error().Printf("Request to Twizo failed: %v", err)
 		return err
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() // nolint: errcheck
 
 	// might want to use json.Decoder instead of ioutl.ReadAll -> sending to Unmarshal
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		Logger.Error().Printf("Cannot parse Twizo response: %v", err)
 		return err
 	}
 
 	if len(resBody) > 0 {
-		Logger.Debug().Printf("Response in [%v] with [%d] body %s", time.Since(start), res.StatusCode, resBody)
+		DebugLogger.Printf("Response in [%v] with [%d] body %s", time.Since(start), res.StatusCode, resBody)
 	} else {
-		Logger.Debug().Printf("Response in [%v] with [%d]", time.Since(start), res.StatusCode)
+		DebugLogger.Printf("Response in [%v] with [%d]", time.Since(start), res.StatusCode)
 	}
 
 	// check if there was a problem
 	if res.Header.Get("Content-Type") == "application/problem+json" {
+		if res.StatusCode == http.StatusUnprocessableEntity {
+			apiError := &APIValidationError{}
+			if err := json.Unmarshal(resBody, apiError); err != nil {
+				return err
+			}
+			return apiError
+		}
+
 		apiError := &APIError{}
 		if err := json.Unmarshal(resBody, apiError); err != nil {
-			jsonError := &JSONClientError{
-				Message:    fmt.Sprintf("Could not unmarchal [%s] into [%s] because [%s]", resBody, reflect.TypeOf(apiError), err),
-				Code:       res.StatusCode,
-				LowerError: err,
-			}
-			return jsonError
+			return err
 		}
 		return apiError
 	}
@@ -203,24 +230,22 @@ func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error 
 		return clientError
 	}
 
-	if v == nil {
-		// no response interface we are done
+	// todo check if we are actually a http NoContent here ?
+	if response == nil {
+		// not expecting result we are done
 		return nil
 	}
 
 	// https://ahmetalpbalkan.com/blog/golang-json-decoder-pitfalls/
-	if err := json.Unmarshal(resBody, v); err != nil {
-		jsonError := &JSONClientError{
-			Message:    fmt.Sprintf("Could not unmarchal [%s] into [%s] because [%s]", resBody, reflect.TypeOf(v), err),
-			Code:       res.StatusCode,
-			LowerError: err,
-		}
-		return jsonError
+	// todo: check the content-type to make sure it's application/json
+	if err := json.Unmarshal(resBody, response); err != nil {
+		return err
 	}
 
 	return nil
 }
 
+// GetClient gets the a client initialized with region and key
 func GetClient(region APIRegion, key string) *HTTPClient {
 	return &HTTPClient{region, key, GetHTTPClient()}
 }
@@ -229,11 +254,12 @@ func GetClient(region APIRegion, key string) *HTTPClient {
 // Support Structs
 //
 
-// HATEOAS link structure
+// HATEOASHref link structure
 type HATEOASHref struct {
 	Href url.URL `json:"href"`
 }
 
+// UnmarshalJSON the HATEOASHref link
 func (l *HATEOASHref) UnmarshalJSON(j []byte) error {
 	var rawStrings map[string]string
 
@@ -256,16 +282,17 @@ func (l *HATEOASHref) UnmarshalJSON(j []byte) error {
 	return nil
 }
 
+// HATEOASLinks struct
 type HATEOASLinks struct {
 	Self HATEOASHref `json:"self"`
 }
 
-func (h HATEOASLinks) getDeepClone () (HATEOASLinks) {
-	linkUrl, _ := url.Parse(h.Self.Href.String())
+func (h HATEOASLinks) getDeepClone() HATEOASLinks {
+	linkURL, _ := url.Parse(h.Self.Href.String())
 
 	return HATEOASLinks{
 		Self: HATEOASHref{
-			Href: *linkUrl,
+			Href: *linkURL,
 		},
 	}
 }
@@ -285,16 +312,22 @@ func createSelfLinks(selfLink *url.URL) HATEOASLinks {
 func SetHTTPClient(client *http.Client) {
 	httpClient = client
 }
+
+// GetHTTPClient returns the current http client
 func GetHTTPClient() *http.Client {
 	return httpClient
 }
 
-func GetURLFor(path string) (*url.URL, error) {
+// GetURLFor allows mocking
+var GetURLFor = GetURLForOriginal
+
+// GetURLForOriginal gets the url for a request [todo: refactor]
+func GetURLForOriginal(path string) (*url.URL, error) {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
 
-	if !strings.HasPrefix(path, "/" + ClientAPIVersion) {
+	if !strings.HasPrefix(path, "/"+ClientAPIVersion) {
 		path = fmt.Sprintf("/%s%s", ClientAPIVersion, path)
 	}
 
@@ -309,10 +342,12 @@ func GetURLFor(path string) (*url.URL, error) {
 	return apiURL, nil
 }
 
+// AddHostForRegion adds a region with a host
 func AddHostForRegion(region APIRegion, host string) {
 	regionUrls[region] = host
 }
 
+// GetHostForRegion gets a region for a host
 func GetHostForRegion(region APIRegion) string {
 	if host, ok := regionUrls[region]; ok {
 		return host
@@ -321,14 +356,14 @@ func GetHostForRegion(region APIRegion) string {
 	return regionUrls["default"]
 }
 
+// GetRegions get all regions
 func GetRegions() map[APIRegion]string {
 	return regionUrls
 }
 
-
-func isDcsBinary(i int) (bool) {
-	if i & 200 == 0 || i & 248 == 240 {
-		return ((i & 4) > 0)
+func isDcsBinary(i int) bool {
+	if i&200 == 0 || i&248 == 240 {
+		return (i & 4) > 0
 	}
 	return false
 }
@@ -347,7 +382,7 @@ func convertRecipients(recipients interface{}) ([]Recipient, error) {
 			r = append(r, Recipient(element))
 		}
 	default:
-		return nil, fmt.Errorf("Expecting string []Recipient or Recipient, got [%s]", reflect.TypeOf(recipients))
+		return nil, fmt.Errorf("expecting string []Recipient or Recipient, got [%s]", reflect.TypeOf(recipients))
 	}
 	return r, nil
 }

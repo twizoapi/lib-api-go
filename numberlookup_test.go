@@ -3,18 +3,32 @@ package twizo_test
 // go get gopkg.in/jarcoal/httpmock.v1
 
 import (
-	twizo "github.com/twizoapi/lib-api-go"
-	. "github.com/twizoapi/lib-api-go/testing"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"testing"
 
-	"fmt"
+	twizo "github.com/twizoapi/lib-api-go"
+	. "github.com/twizoapi/lib-api-go/testing"
+
 	"gopkg.in/jarcoal/httpmock.v1"
-	"net/http"
 )
 
 func init() {
-	twizo.APIKey = TestApiKey
+	twizo.APIKey = TestAPIKey
 	twizo.RegionCurrent = TestRegion
+}
+
+func TestNumberLookupInvalidJsonResponse(t *testing.T) {
+	jsonResponse := &twizo.NumberLookupResponse{}
+	err := jsonResponse.UnmarshalJSON([]byte("Invalid json"))
+	if _, ok := err.(*json.SyntaxError); !ok {
+		t.Fatalf(
+			"Invalid error expecting [json.SyntaxError] got [%v]",
+			err,
+		)
+	}
 }
 
 func TestNumberLookupSubmit(t *testing.T) {
@@ -31,7 +45,7 @@ func TestNumberLookupSubmit(t *testing.T) {
     "_embedded": {
         "items": [
             {
-                "applicationTag": "UnitTest",
+                "applicationTag": "{{.ApplicationTag}}",
                 "callbackUrl": null,
                 "countryCode": null,
                 "createdDateTime": "2017-03-13T14:37:35+00:00",
@@ -65,13 +79,15 @@ func TestNumberLookupSubmit(t *testing.T) {
 }`
 
 	data := struct {
-		MessageID string
-		Number    string
-		Host      string
-	} {
-		MessageID : "test-1.10314.sms58c16b15c261a5.18930279",
-		Number    : "6100000000",
-		Host      : twizo.GetHostForRegion(twizo.RegionCurrent),
+		MessageID      string
+		Number         string
+		ApplicationTag string
+		Host           string
+	}{
+		MessageID:      "test-1.10314.sms58c16b15c261a5.18930279",
+		Number:         "6100000000",
+		ApplicationTag: "UnitTest",
+		Host:           twizo.GetHostForRegion(twizo.RegionCurrent),
 	}
 
 	b, err := ParseTemplateStringToBytes(tpl, data)
@@ -79,21 +95,63 @@ func TestNumberLookupSubmit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	HttpMockSendJsonPostTo(
-		fmt.Sprintf("https://%s/%s/numberlookup/submit", data.Host, twizo.ClientAPIVersion),
+	err = HTTPMockSend(
+		http.MethodPost,
+		fmt.Sprintf(
+			"https://%s/%s/numberlookup/submit",
+			data.Host,
+			twizo.ClientAPIVersion,
+		),
 		http.StatusCreated,
 		b,
+		func(req *http.Request) error {
+			var arbitraryJSON map[string]interface{}
+			receivedJSON, subErr := ioutil.ReadAll(req.Body)
+			if subErr != nil {
+				panic(subErr)
+			}
+			subErr = json.Unmarshal([]byte(receivedJSON), &arbitraryJSON)
+			if err != nil {
+				panic(subErr)
+			}
+			for key, value := range arbitraryJSON {
+				switch key {
+				case "numbers":
+					values := value.([]interface{})
+					if len(values) != 1 {
+						return fmt.Errorf("too many elements in request for numbers expecting 1 got [%d]", len(values))
+					}
+					if values[0].(string) != data.Number {
+						return fmt.Errorf("number element should be [%s] got [%v]", data.Number, values[0])
+					}
+				default:
+					return fmt.Errorf("unexpected element [%s] -> [%v] in request", key, value)
+				}
+			}
+			return nil
+		},
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	response, err := twizo.NumberLookupSubmit([]twizo.Recipient{twizo.Recipient(data.Number)})
 	if err != nil {
 		t.Fatal(err)
 	}
 	items := response.GetItems()
+	if len(items) != 1 {
+		t.Fatalf("Expecting 1 returned element got [%d]", len(items))
+	}
 
 	// only check for now check messageId
 	if items[0].GetMessageID() != data.MessageID {
-		t.Fatalf("Invalid message id expected [%s] got [%v]", data.MessageID, items[0].GetMessageID())
+		t.Fatalf("Invalid message id expecting [%s] got [%v]", data.MessageID, items[0].GetMessageID())
+	}
+	if items[0].GetNumber() != data.Number {
+		t.Fatalf("Invalid message id expecting [%s] got [%v]", data.Number, items[0].GetNumber())
+	}
+	if items[0].GetApplicationTag() != data.ApplicationTag {
+		t.Fatalf("Invalid application tag expecting [%s] got [%v]", data.ApplicationTag, items[0].GetApplicationTag())
 	}
 }
-

@@ -1,29 +1,45 @@
 package twizo_test
 
-// go get gopkg.in/jarcoal/httpmock.v1
-
 import (
+	"testing"
+
 	twizo "github.com/twizoapi/lib-api-go"
 	. "github.com/twizoapi/lib-api-go/testing"
-	"testing"
 
 	"encoding/json"
 	"fmt"
-	"gopkg.in/jarcoal/httpmock.v1"
 	"net/http"
+
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 func init() {
-	twizo.APIKey = TestApiKey
+	twizo.APIKey = TestAPIKey
 	twizo.RegionCurrent = TestRegion
 }
 
-func TestSmsNew(t *testing.T) {
-	smsRequest := twizo.NewSmsRequest([]twizo.Recipient{twizo.Recipient("0000000000")}, "Message", "Sender")
+func TestSmsInvalidJsonResponse(t *testing.T) {
+	jsonResponse := &twizo.SmsResponse{}
+	err := jsonResponse.UnmarshalJSON([]byte("Invalid json"))
+	if _, ok := err.(*json.SyntaxError); !ok {
+		t.Fatalf(
+			"Invalid error expecting [json.SyntaxError] got [%#v]",
+			err,
+		)
+	}
+}
 
-	_, err := json.Marshal(smsRequest)
+func TestSmsNew(t *testing.T) {
+	smsRequest, err := twizo.NewSmsRequest([]twizo.Recipient{twizo.Recipient("0000000000")}, "Message", "Sender")
 	if err != nil {
 		t.Fatal(err)
+		return
+	}
+
+	_, err = json.Marshal(smsRequest)
+	if err != nil {
+		t.Fatal(err)
+		return
 	}
 }
 
@@ -75,10 +91,10 @@ func TestSmsSubmit(t *testing.T) {
 		MessageID string
 		Number    string
 		Host      string
-	} {
-		MessageID : "test-1.10314.sms58c16b15c261a5.18930279",
-		Number    : "6100000000",
-		Host      : twizo.GetHostForRegion(twizo.RegionCurrent),
+	}{
+		MessageID: "test-1.10314.sms58c16b15c261a5.18930279",
+		Number:    "6100000000",
+		Host:      twizo.GetHostForRegion(twizo.RegionCurrent),
 	}
 
 	b, err := ParseTemplateStringToBytes(tpl, data)
@@ -86,11 +102,16 @@ func TestSmsSubmit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	HttpMockSendJsonPostTo(
+	err = HTTPMockSend(
+		http.MethodPost,
 		fmt.Sprintf("https://%s/%s/sms/submitsimple", data.Host, twizo.ClientAPIVersion),
 		http.StatusCreated,
 		b,
+		nil,
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	response, err := twizo.SmsSubmit([]twizo.Recipient{twizo.Recipient(data.Number)}, "Message", "TwizoTest")
 	if err != nil {
@@ -100,7 +121,7 @@ func TestSmsSubmit(t *testing.T) {
 
 	// only check for now check messageId
 	if items[0].GetMessageID() != data.MessageID {
-		t.Fatalf("Invalid message id expected [%s] got [%v]", data.MessageID, items[0].GetMessageID())
+		t.Fatalf("Invalid message id expecting [%s] got [%v]", data.MessageID, items[0].GetMessageID())
 	}
 }
 

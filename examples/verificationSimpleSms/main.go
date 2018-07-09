@@ -1,19 +1,19 @@
-package main;
+package main
 
 import (
+	"fmt"
 	twizo "github.com/twizoapi/lib-api-go"
 	"github.com/twizoapi/lib-api-go/examples"
-	"fmt"
 )
 
 func main() {
-	utils.Main();
+	utils.Main()
 
 	twizo.APIKey = utils.SuppliedApiKey
 	twizo.RegionCurrent = twizo.APIRegion(utils.SuppliedRegion)
 
 	//
-	// Note: error handeling was abreviated for example's sake
+	// Note: error handling was abbreviated for example's sake
 	//
 
 	// if not using a Test Application key it might fail, if using a test key

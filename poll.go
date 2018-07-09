@@ -5,23 +5,15 @@ import (
 	"net/url"
 )
 
-type PollError struct {
-	APIError
-}
-
-func (e PollError) isNotFoundError() bool {
-	return true
-}
-
 type pollResultInterface interface {
 	GetURL() (*url.URL, error)
 }
 
 type pollResults struct {
 	pollResultInterface
-	BatchID string        	    `json:"batchId"`
-	Count   int                 `json:"count"` // strange was called total_items in smsResponse
-	Links   *HATEOASLinks 	    `json:"_links"`
+	BatchID string        `json:"batchId"`
+	Count   int           `json:"count"` // strange was called total_items in smsResponse
+	Links   *HATEOASLinks `json:"_links"`
 }
 
 func (p *pollResults) status(url *url.URL, resp interface{}) error {
@@ -57,4 +49,3 @@ func (p *pollResults) Delete() error {
 
 	return err
 }
-
