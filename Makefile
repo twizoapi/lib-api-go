@@ -1,12 +1,16 @@
 #!/usr/bin/env make -rRf
-
+# only usr settings here
 PACKAGE      = github.com/twizoapi/lib-api-go
-GOPATH       = $(CURDIR)/.gopath
+
+# Set Gopath if not set (it should be)
+GOPATH       ?= $(CURDIR)/.gopath
 BASE         = $(GOPATH)/src/$(PACKAGE)
 BIN          = $(GOPATH)/bin
 VERBOSE      = 0
 
 ## internal functions
+CPUS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 1)
+MAKEFLAGS += --jobs=$(CPUS)
 
 # Internal functions to find X in A by position and return Y from B (on same position)
 # mapping GO_EXAMPLES_BIN -> GO_EXAMPLES_SRC
@@ -35,18 +39,18 @@ PHONY := ''
 default: test
 
 # Create the "fake GOPATH settings"
-$(BASE): ; $(info $(M) setting GOPATH…)
+$(BASE): ; $(info $(M) setting GOPATH …)
 	$(Q) mkdir -p $(dir $@)
 	$(Q) ln -sf $(CURDIR) $@
 	$(Q) @$(info GOPATH is [${GOPATH}])
 
 # Set up go lint
 GO_LINT = $(BIN)/golint
-$(GO_LINT): | $(BASE) ; $(info $(M) building golint…)
+$(GO_LINT): | $(BASE) ; $(info $(M) building golint …)
 	$(Q) go get github.com/golang/lint/golint
 
 PHONY += lint
-lint: | $(GO_LINT) ; $(info $(M) running golint…) @ ## Run golint
+lint: | $(GO_LINT) ; $(info $(M) running golint …) @ ## Run golint
 	$(Q) cd $(BASE) && ret=0 && for pkg in $(GO_SRC); do \
 		test -z "$$($(GO_LINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
 	done ; exit $$ret
@@ -59,11 +63,11 @@ fmt:
 
 # Set up go metalinter
 GO_METALINTER       = $(BIN)/gometalinter.v1
-$(GO_METALINTER): | $(BASE) ; $(info $(M) building gometalinter…)
+$(GO_METALINTER): | $(BASE) ; $(info $(M) building gometalinter …)
 	$(Q) go get gopkg.in/alecthomas/gometalinter.v1; $(GO_METALINTER) --install
 
 PHONY += metalinter
-metalinter: | $(GO_METALINTER) ; $(info $(M) running metalinter…) @ ## Run golint
+metalinter: | $(GO_METALINTER) ; $(info $(M) running metalinter …) @ ## Run golint
 	$(Q) $(GO_METALINTER) \
 		--deadline=120s \
 		--vendor \
@@ -71,12 +75,12 @@ metalinter: | $(GO_METALINTER) ; $(info $(M) running metalinter…) @ ## Run gol
 		--disable-all \
 		--enable=vet \
 		--enable=golint \
-        --enable=ineffassign \
-        --enable=errcheck \
-        --enable=lll \
-        --enable=deadcode \
-        --line-length=120 \
-        --vendored-linters
+    --enable=ineffassign \
+    --enable=errcheck \
+    --enable=lll \
+    --enable=deadcode \
+    --line-length=120 \
+    --vendored-linters
 
 # Richgo
 # GO_RICHGO           = $(GOPATH)/bin/richgo
@@ -84,12 +88,21 @@ metalinter: | $(GO_METALINTER) ; $(info $(M) running metalinter…) @ ## Run gol
 #	$(GO_RICHGO) test -v -coverprofile=c.out
 
 GO_HTTPMOCK = $(GOPATH)/src/gopkg.in/jarcoal/httpmock.v1
-$(GO_HTTPMOCK): | $(BASE) ; $(info $(M) installing httpmock.v1…)
+$(GO_HTTPMOCK): | $(BASE) ; $(info $(M) installing httpmock.v1 …)
 	$(Q) go get gopkg.in/jarcoal/httpmock.v1
 
+GO_SIMPLEJSON = $(GOPATH)/src/github.com/bitly/go-simplejson
+$(GO_SIMPLEJSON): | $(BASE) ; $(info $(M) installing go-simplejson …)
+	$(Q) go get github.com/bitly/go-simplejson
+
+
 PHONY += test_units
-test_units: | $(GO_HTTPMOCK)
-	$(Q) go test -v -coverprofile=c.out
+test_units: | $(GO_HTTPMOCK) $(GO_SIMPLEJSON)
+	$(Q) cd $(BASE) && go test -v -coverprofile=c.out
+
+PHONY += test_units_html
+test_units_html: | $(BASE) test_units
+	$(Q) cd $(BASE) && go tool cover -html=c.out -o c.html
 
 PHONY += travis
 travis: test_units examples
@@ -97,12 +110,11 @@ travis: test_units examples
 PHONY += test
 test: test_units
 
+# specific for this repository, making the examples
 PHONY += examples
 examples: $(GO_EXAMPLES_BIN)
 
-$(GO_EXAMPLES_BIN): $(GO_EXAMPLES_SRC) | $(BASE) ; $(info $(M) building $@…)
-	# $(Q) echo Building $@
-	# $(Q) echo From $(call lookup,$@,$(GO_EXAMPLES_BIN),$(GO_EXAMPLES_SRC))
+$(GO_EXAMPLES_BIN): $(GO_EXAMPLES_SRC) examples/utils.go $(GO_SRC)| $(BASE) ; $(info $(M) building $@ …)
 	$(Q) go build -o $@ $(call lookup,$@,$(GO_EXAMPLES_BIN),$(GO_EXAMPLES_SRC))
 
 # Declare the contents of the .PHONY variable as phony.  We keep that

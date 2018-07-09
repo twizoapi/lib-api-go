@@ -1,25 +1,26 @@
 package utils
 
 import (
-	twizo "github.com/twizoapi/lib-api-go"
-	"os"
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
-	"strings"
-	"bufio"
+	"os"
 	"reflect"
-	"bytes"
-	"errors"
 	"regexp"
-	"encoding/json"
+	"strings"
+
+	twizo "github.com/twizoapi/lib-api-go"
 )
 
 // exported settings
-var SuppliedApiKey 		string
-var SuppliedRegion              string
+var SuppliedApiKey string
+var SuppliedRegion string
 
-func getRegionStrings() ([]string) {
-	regions := twizo.GetRegions();
+func getRegionStrings() []string {
+	regions := twizo.GetRegions()
 	keys := make([]string, 0, len(regions))
 	for k := range regions {
 		keys = append(keys, string(k))
@@ -28,15 +29,19 @@ func getRegionStrings() ([]string) {
 }
 
 func Main() {
-	key       := flag.String("key", "", "the api key (required)")
-	region    := flag.String("region", string(twizo.APIRegionDefault), fmt.Sprintf("the region to use [%s]", strings.Join(getRegionStrings(), ",")))
+	key := flag.String("key", "", "the api key (required) [Environment:TWIZO_API_KEY]")
+	region := flag.String("region", string(twizo.APIRegionDefault), fmt.Sprintf("the region to use [%s]", strings.Join(getRegionStrings(), ",")))
 	isVerbose := flag.Bool("verbose", false, "show interaction with api")
-	isHelp    := flag.Bool("help", false, "Show the help")
+	isHelp := flag.Bool("help", false, "Show the help")
 	flag.Parse()
 
 	if *isHelp == true {
 		flag.PrintDefaults()
 		os.Exit(0)
+	}
+
+	if *key == "" {
+		*key = os.Getenv("TWIZO_API_KEY")
 	}
 
 	if *key == "" {
@@ -89,10 +94,10 @@ func AskForInput(messageStr string, defaultStr string) (string, error) {
 	return text, nil
 }
 
-func Call(m map[string]interface{}, name string, params ... interface{}) (result []reflect.Value, err error) {
+func Call(m map[string]interface{}, name string, params ...interface{}) (result []reflect.Value, err error) {
 	f := reflect.ValueOf(m[name])
 	if len(params) != f.Type().NumIn() {
-		err = errors.New("The number of params is not adapted.")
+		err = errors.New("the number of params is not adapted")
 		return
 	}
 	in := make([]reflect.Value, len(params))
@@ -103,14 +108,14 @@ func Call(m map[string]interface{}, name string, params ... interface{}) (result
 	return
 }
 
-func AsString(s interface{}, params ...string) (string) {
+func AsString(s interface{}, params ...string) string {
 	switch sType := s.(type) {
 	case string:
 		return sType
 	case *string:
-		if (sType == nil && len(params) > 0) {
+		if sType == nil && len(params) > 0 {
 			return params[0]
-		} else if (sType == nil) {
+		} else if sType == nil {
 			return "nil"
 		} else {
 			return *sType
@@ -120,26 +125,25 @@ func AsString(s interface{}, params ...string) (string) {
 	return "unknown"
 }
 
-func GetJsonFor(s interface{}) (string) {
+func GetJsonFor(s interface{}) string {
 	bytes, _ := json.MarshalIndent(s, "", "\t")
 
 	return string(bytes)
 }
 
-func DumpStruct(s interface{}) (string) {
+func DumpStruct(s interface{}) string {
 	var buffer bytes.Buffer
 	sType := reflect.TypeOf(s)
 	sValue := reflect.ValueOf(s)
 
 	buffer.WriteString(fmt.Sprintf("%s\n", sType))
 
-
 	re := regexp.MustCompile("^Get(?P<property>.+)$")
 	for i := 0; i < sType.NumMethod(); i++ {
 		method := sType.Method(i)
 		// call only the Get methods
 		result := re.FindStringSubmatch(method.Name)
-		if (len(result) != 2) {
+		if len(result) != 2 {
 			// it is not a get method
 			continue
 		}
@@ -151,5 +155,3 @@ func DumpStruct(s interface{}) (string) {
 
 	return buffer.String()
 }
-
-

@@ -13,7 +13,7 @@ func main() {
 	twizo.RegionCurrent = twizo.APIRegion(utils.SuppliedRegion)
 
 	//
-	// Note: error handeling was abreviated for example's sake
+	// Note: error handling was abbreviated for example's sake
 	//
 
 	// if not using a Test Application key it might fail, if using a test key

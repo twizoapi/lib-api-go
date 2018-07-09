@@ -94,11 +94,12 @@ var httpClientUserAgent = fmt.Sprintf(
 
 // APIKey the api key : possible to override this setting
 var APIKey string
+
 // RegionCurrent the current region : possible to override this setting
 var RegionCurrent = APIRegionDefault
+
 // HTTPClientTimeout the current timeout on http calls
 var HTTPClientTimeout = defaultHTTPTimeout
-
 
 // Recipient the recipient
 type Recipient string
@@ -122,6 +123,27 @@ type HTTPClient struct {
 	Region     APIRegion
 	Key        string
 	HTTPClient *http.Client
+}
+
+// NewRequest creates a new request, this allows it to be tested [todo: refactor]
+func (c HTTPClient) NewRequest(method string, url *url.URL, body io.Reader) (*http.Request, error) {
+
+	if url.Host == "" {
+		url.Host = GetHostForRegion(c.Region)
+	}
+
+	req, err := http.NewRequest(method, url.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.SetBasicAuth(ClientAuthUser, c.Key)
+
+	req.Header.Add("User-Agent", httpClientUserAgent)
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+
+	return req, nil
 }
 
 // Call performs the actual call on the client
@@ -157,34 +179,13 @@ func (c *HTTPClient) Call(method string, url *url.URL, request Request, expectCo
 	return nil
 }
 
-// NewRequest creates a new request, this allows it to be tested [todo: refactor]
-func (c *HTTPClient) NewRequest(method string, url *url.URL, body io.Reader) (*http.Request, error) {
-
-	if url.Host == "" {
-		url.Host = GetHostForRegion(c.Region)
-	}
-
-	req, err := http.NewRequest(method, url.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.SetBasicAuth(ClientAuthUser, c.Key)
-
-	req.Header.Add("User-Agent", httpClientUserAgent)
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Content-Type", "application/json")
-
-	return req, nil
-}
-
 // Do is used by Call to execute an API request and parse the response. It uses
 // the backend's HTTP client to execute the request and unmarshals the response
 // into v. It also handles unmarshaling errors returned by the API.
-func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error {
+func (c *HTTPClient) do(request *http.Request, expectCode int, response interface{}) error {
 	start := time.Now()
 
-	res, err := c.HTTPClient.Do(req)
+	res, err := c.HTTPClient.Do(request)
 
 	if err != nil {
 		return err
@@ -205,14 +206,17 @@ func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error 
 
 	// check if there was a problem
 	if res.Header.Get("Content-Type") == "application/problem+json" {
+		if res.StatusCode == http.StatusUnprocessableEntity {
+			apiError := &APIValidationError{}
+			if err := json.Unmarshal(resBody, apiError); err != nil {
+				return err
+			}
+			return apiError
+		}
+
 		apiError := &APIError{}
 		if err := json.Unmarshal(resBody, apiError); err != nil {
-			jsonError := &JSONClientError{
-				Message:    fmt.Sprintf("Could not unmarchal [%s] into [%s] because [%s]", resBody, reflect.TypeOf(apiError), err),
-				Code:       res.StatusCode,
-				LowerError: err,
-			}
-			return jsonError
+			return err
 		}
 		return apiError
 	}
@@ -226,19 +230,16 @@ func (c *HTTPClient) do(req *http.Request, expectCode int, v interface{}) error 
 		return clientError
 	}
 
-	if v == nil {
-		// no response interface we are done
+	// todo check if we are actually a http NoContent here ?
+	if response == nil {
+		// not expecting result we are done
 		return nil
 	}
 
 	// https://ahmetalpbalkan.com/blog/golang-json-decoder-pitfalls/
-	if err := json.Unmarshal(resBody, v); err != nil {
-		jsonError := &JSONClientError{
-			Message:    fmt.Sprintf("Could not unmarchal [%s] into [%s] because [%s]", resBody, reflect.TypeOf(v), err),
-			Code:       res.StatusCode,
-			LowerError: err,
-		}
-		return jsonError
+	// todo: check the content-type to make sure it's application/json
+	if err := json.Unmarshal(resBody, response); err != nil {
+		return err
 	}
 
 	return nil
@@ -317,8 +318,11 @@ func GetHTTPClient() *http.Client {
 	return httpClient
 }
 
-// GetURLFor gets the url for a request [todo: refactor]
-func GetURLFor(path string) (*url.URL, error) {
+// GetURLFor allows mocking
+var GetURLFor = GetURLForOriginal
+
+// GetURLForOriginal gets the url for a request [todo: refactor]
+func GetURLForOriginal(path string) (*url.URL, error) {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
@@ -359,7 +363,7 @@ func GetRegions() map[APIRegion]string {
 
 func isDcsBinary(i int) bool {
 	if i&200 == 0 || i&248 == 240 {
-		return ((i & 4) > 0)
+		return (i & 4) > 0
 	}
 	return false
 }
@@ -378,7 +382,7 @@ func convertRecipients(recipients interface{}) ([]Recipient, error) {
 			r = append(r, Recipient(element))
 		}
 	default:
-		return nil, fmt.Errorf("Expecting string []Recipient or Recipient, got [%s]", reflect.TypeOf(recipients))
+		return nil, fmt.Errorf("expecting string []Recipient or Recipient, got [%s]", reflect.TypeOf(recipients))
 	}
 	return r, nil
 }

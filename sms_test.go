@@ -1,21 +1,32 @@
 package twizo_test
 
-// go get gopkg.in/jarcoal/httpmock.v1
-
 import (
+	"testing"
+
 	twizo "github.com/twizoapi/lib-api-go"
 	. "github.com/twizoapi/lib-api-go/testing"
-	"testing"
 
 	"encoding/json"
 	"fmt"
-	"gopkg.in/jarcoal/httpmock.v1"
 	"net/http"
+
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 func init() {
-	twizo.APIKey = TestApiKey
+	twizo.APIKey = TestAPIKey
 	twizo.RegionCurrent = TestRegion
+}
+
+func TestSmsInvalidJsonResponse(t *testing.T) {
+	jsonResponse := &twizo.SmsResponse{}
+	err := jsonResponse.UnmarshalJSON([]byte("Invalid json"))
+	if _, ok := err.(*json.SyntaxError); !ok {
+		t.Fatalf(
+			"Invalid error expecting [json.SyntaxError] got [%#v]",
+			err,
+		)
+	}
 }
 
 func TestSmsNew(t *testing.T) {
@@ -91,10 +102,12 @@ func TestSmsSubmit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = HttpMockSendJsonPostTo(
+	err = HTTPMockSend(
+		http.MethodPost,
 		fmt.Sprintf("https://%s/%s/sms/submitsimple", data.Host, twizo.ClientAPIVersion),
 		http.StatusCreated,
 		b,
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -108,7 +121,7 @@ func TestSmsSubmit(t *testing.T) {
 
 	// only check for now check messageId
 	if items[0].GetMessageID() != data.MessageID {
-		t.Fatalf("Invalid message id expected [%s] got [%v]", data.MessageID, items[0].GetMessageID())
+		t.Fatalf("Invalid message id expecting [%s] got [%v]", data.MessageID, items[0].GetMessageID())
 	}
 }
 

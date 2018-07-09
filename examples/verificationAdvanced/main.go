@@ -14,13 +14,16 @@ func main() {
 	twizo.RegionCurrent = twizo.APIRegion(utils.SuppliedRegion)
 
 	//
-	// Note: error handeling was abreviated for example's sake
+	// Note: error handling was abbreviated for example's sake
 	//
 
 	// if not using a Test Application key it might fail, if using a test key
 	// you can send to 6100000000 and validate it
 	phone, _ := utils.AskForInput("Enter phone number [6100000000]: ", "6100000000")
-	verificationRequest := twizo.NewVerificationRequest(twizo.Recipient(phone))
+	verificationRequest, err := twizo.NewVerificationRequest(phone)
+	if err != nil {
+		panic(err)
+	}
 	verificationRequest.SetBodyTemplate("Your verification code is %token%")
 	verificationRequest.SetTokenLength(10)
 	verificationRequest.SetTokenType(twizo.VerificationTokenTypeAlpha)
@@ -32,8 +35,9 @@ func main() {
 	// retrieved in messageId
 	messageID := verificationResponse.GetMessageID()
 
-	// valid Token for a Test Application with number 6100000000 is 012345, ask user
-	token, _ := utils.AskForInput("Enter token [A123456789]: ", "A123456789")
+	// valid Token for a Test Application (alphanumeric) with number
+	// 6100000000 is a123456789, ask user
+	token, _ := utils.AskForInput("Enter token [a123456789]: ", "a123456789")
 	verificationResponse, err = twizo.VerificationVerify(messageID, token)
 	if err != nil {
 		panic(err)

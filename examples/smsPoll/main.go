@@ -14,7 +14,7 @@ func main() {
 	twizo.RegionCurrent = twizo.APIRegion(utils.SuppliedRegion)
 
 	//
-	// Note: error handeling was abreviated for example's sake
+	// Note: error handling was abbreviated for example's sake
 	//
 
 	phone, _ := utils.AskForInput("Enter phone number [6100000000]: ", "6100000000")
