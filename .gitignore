@@ -1,4 +1,6 @@
-/c.out
+/.gopath
 /bin
 /src
 /pkg
+/c.out
+/c.html
