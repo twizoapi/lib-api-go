@@ -9,6 +9,14 @@ install:
 before_install:
     - RepoName=`basename $PWD`; SrcDir=`dirname $PWD`; DestDir="`dirname $SrcDir`/twizoapi"
     - if [[ "$SrcDir" != "$DestDir" ]]; then mv "$SrcDir" "$DestDir"; cd ../../twizoapi/$RepoName; export TRAVIS_BUILD_DIR=`dirname $TRAVIS_BUILD_DIR`/$RepoName; fi
+    - |
+        if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+          TRAVIS_COMMIT_RANGE="FETCH_HEAD...$TRAVIS_BRANCH"
+        fi
+        git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs))/' || {
+          echo "Only docs were updated, stopping build process."
+          exit
+        }
 script: make travis
 matrix:
     allow_failures:
