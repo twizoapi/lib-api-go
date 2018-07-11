@@ -47,6 +47,25 @@ func (request *BackupCodeRequest) Delete() error {
 	return nil
 }
 
+// Status will retrieve the backupcode status
+func (request *BackupCodeRequest) Status() (*BackupCodeResponse, error) {
+	response := &BackupCodeResponse{}
+	apiURL, err := GetURLFor(fmt.Sprintf("backupcode/%s", url.PathEscape(request.GetIdentifier())))
+	if err != nil {
+		return nil, err
+	}
+
+	err = GetClient(RegionCurrent, APIKey).Call(
+		http.MethodGet,
+		apiURL,
+		request,
+		http.StatusOK,
+		response,
+	)
+
+	return response, err
+}
+
 // Verify token did belong to the identifier of the request
 func (request *BackupCodeRequest) Verify(token string) (*BackupCodeResponse, error) {
 	response := &BackupCodeResponse{}
@@ -214,7 +233,7 @@ func (response BackupCodeResponse) GetIdentifier() string {
 	return response.identifier
 }
 
-// GetCodes returns the codes that were assined (only for a create operation)
+// GetCodes returns the codes that were assigned (only for a create operation)
 func (response BackupCodeResponse) GetCodes() []string {
 	return response.codes
 }
@@ -268,4 +287,19 @@ func BackupCodeDelete(id string) error {
 func BackupCodeVerify(id string, token string) (*BackupCodeResponse, error) {
 	request := NewBackupCodeRequest(id)
 	return request.Verify(token)
+}
+
+// BackupCodeStatus will return backup status
+func BackupCodeStatus(id string) (*BackupCodeResponse, error) {
+	request := NewBackupCodeRequest(id)
+	return request.Status()
+}
+
+// BackupCodeAmountLeft returns the amount of codes left or 0 on error
+func BackupCodeAmountLeft(id string) (int, error) {
+	response, err := BackupCodeStatus(id)
+	if err != nil {
+		return 0, err
+	}
+	return response.GetAmountOfCodesLeft(), err
 }
