@@ -17,7 +17,7 @@ const (
 	VerificationTypeCall              VerificationType = "call"
 	VerificationTypeBioVoice          VerificationType = "biovoice"
 	VerificationTypePush              VerificationType = "push"
-	VerificationTypeTotp              VerificationType = "totpCreate"
+	VerificationTypeTotp              VerificationType = "totp"
 	VerificationTypeTelegram          VerificationType = "telegram"
 	VerificationTypeLine              VerificationType = "line"
 	VerificationTypeBackupCode        VerificationType = "backupcode"
