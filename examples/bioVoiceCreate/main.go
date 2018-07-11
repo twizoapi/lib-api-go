@@ -16,6 +16,11 @@ func main() {
 	//
 	// Note: error handling was abbreviated for example's sake
 	//
+
+	//
+	// Biovoice might not work with a test key
+	//
+	utils.CheckKey(true)
 	registration, _ := utils.AskForInput("Create biovoice registration for phone number [6100000000]: ", "6100000000")
 	bioVoiceResponse, err := twizo.BioVoiceCreateRegistration(registration)
 	if err != nil {

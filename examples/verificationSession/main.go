@@ -58,9 +58,12 @@ func main() {
 	}
 
 	fmt.Printf("Please visit [https://widget.twizo.com/ver?sessionToken=%s&origin=] to complete the login procedure\n", response.GetSessionToken())
-	_, err = utils.AskForInput("Press enter to continue: \n", "")
+	_, _ = utils.AskForInput("Press enter to continue: \n", "")
 
 	err = response.Verify()
+	if err != nil {
+		panic(err)
+	}
 	if response.IsTokenSuccess() {
 		fmt.Println("Token was correct")
 	} else {
