@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	twizo "github.com/twizoapi/lib-api-go"
 	"github.com/twizoapi/lib-api-go/examples"
 )
@@ -24,6 +25,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("- Status of verification is [%s]\n", verificationResponse.GetStatusMsg())
+	err = verificationResponse.Status()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("- After status call, verification is [%s]\n", verificationResponse.GetStatusMsg())
 
 	// valid Token for a Test Application with number 6100000000 is 012345, ask user
 	token, _ := utils.AskForInput("Enter token [012345]: ", "012345")
@@ -36,5 +43,10 @@ func main() {
 		fmt.Println("Token was correct")
 	} else {
 		fmt.Println("Token was not correct")
+	}
+	fmt.Printf("- Status of verification is [%s]\n", verificationResponse.GetStatusMsg())
+	err = verificationResponse.Status()
+	if err != nil {
+		panic(err)
 	}
 }

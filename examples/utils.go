@@ -80,6 +80,24 @@ func Main() {
 	}
 }
 
+// CheckKey will exit if the key is not valid, and if warnIfTest is true
+// it will warn the user that the function might not work.
+func CheckKey(warnIfTest bool) {
+	response, err := twizo.ApplicationVerifyCredentials()
+	if err != nil {
+		panic(err)
+	}
+	if !response.IsKeyValid() {
+		fmt.Printf("ERROR: Api Key is not valid\n")
+		os.Exit(2)
+	}
+	if warnIfTest && response.IsTestKey() {
+		fmt.Printf("WARNING: This is a test key the current function might not work\n")
+	}
+}
+
+// AskForInput ask messageStr and reads the response from the user, or returns
+// defaultStr if nothing is read.
 func AskForInput(messageStr string, defaultStr string) (string, error) {
 	fmt.Print(messageStr)
 	reader := bufio.NewReader(os.Stdin)

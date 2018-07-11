@@ -28,7 +28,7 @@ func main() {
 	//
 	// Note: error handling was abbreviated for example's sake
 	//
-	sessionRequest := twizo.NewWidgetSessionRequest()
+	sessionRequest := twizo.NewRegistrationWidgetSessionRequest()
 	allowedTypesStr, _ := utils.AskForInput("AllowedType(s) (Delimiter: ', ') []: ", "")
 	sessionRequest.SetAllowedTypes(trimStrArr(strings.Split(allowedTypesStr, ",")))
 
@@ -47,7 +47,7 @@ func main() {
 		sessionRequest.SetTotpIdentifier(totpIdentifier)
 	}
 
-	if sessionRequest.GetAllowedTypes().Has(twizo.VerificationTypeTelegram, twizo.VerificationTypeLine, twizo.VerificationTypePush) {
+	if sessionRequest.GetAllowedTypes().Has(twizo.VerificationTypeTotp, twizo.VerificationTypeLine, twizo.VerificationTypePush) {
 		issuer, _ := utils.AskForInput("Issuer: ", "")
 		sessionRequest.SetIssuer(issuer)
 	}
@@ -57,13 +57,5 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Please visit [https://widget.twizo.com/ver?sessionToken=%s&origin=] to complete the login procedure\n", response.GetSessionToken())
-	_, err = utils.AskForInput("Press enter to continue: \n", "")
-
-	err = response.Verify()
-	if response.IsTokenSuccess() {
-		fmt.Println("Token was correct")
-	} else {
-		fmt.Println("Token was not correct")
-	}
+	fmt.Printf("Please visit [https://widget.twizo.com/register?sessionToken=%s&origin=] to complete the registration procedure\n", response.GetSessionToken())
 }

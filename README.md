@@ -1,5 +1,5 @@
 <p align="center"><a href="https://www.twizo.com/" target="_blank">
-    <img src="https://www.twizo.com/wp-content/themes/twizo/_/images/twizo-logo-0474ce6f.png" alt="Twizo">
+    <img src="https://www.twizo.com/online/logo/logo.png" alt="Twizo">
 </a></p>
 
 
@@ -8,7 +8,7 @@
 Connect to the Twizo API using Go. This API includes functions to send verifications (2FA), SMS and Number Lookup.
 
 ## Requirements ##
-* Go >= 1.7
+* Go >= 1.9
 
 ## Get application secret and choose api region ##
 To use the Twizo API client, the following things are required:
@@ -31,7 +31,7 @@ $ go get github.com/twizoapi/lib-api-go
 ```
 
 ## Getting started ##
-Require the library using import, here we use twizo as an alias 
+Require the library using import, here we use twizo as an alias
 
 ```go
 import (
@@ -79,7 +79,7 @@ For more examples please see [Verification Examples][examples-verification]
 
 
 ### Sms ###
-Submit the request using the simple method.  Using this method the Twizo Api will autodetect 
+Submit the request using the simple method.  Using this method the Twizo Api will autodetect
 some of the settings for us.  The api will split up the message if the body is too long for
 one SMS as well as some other settings.
 
@@ -108,7 +108,7 @@ for _, smsResponse := range smsResponses.GetItems() {
 ```
 
 Optional retrieve status of sent sms using only the messageId, please note that this function
-can only be used to retieve the status of one sms, using the response above will allow checking 
+can only be used to retieve the status of one sms, using the response above will allow checking
 all messages in that request.
 
 ```go

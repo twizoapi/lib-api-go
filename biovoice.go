@@ -78,6 +78,25 @@ func (request *BioVoiceRequest) CreateRegistration() (*BioVoiceResponse, error) 
 // CheckSubscription checks the status of the subscription
 func (request *BioVoiceRequest) CheckSubscription() (*BioVoiceResponse, error) {
 	response := &BioVoiceResponse{}
+	apiURL, err := GetURLFor(
+		fmt.Sprintf("biovoice/subscription/%s",
+			url.PathEscape(string(request.GetRecipient()))),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = GetClient(RegionCurrent, APIKey).Call(
+		http.MethodGet,
+		apiURL,
+		nil,
+		http.StatusOK,
+		response,
+	)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return response, nil
 }
@@ -85,6 +104,25 @@ func (request *BioVoiceRequest) CheckSubscription() (*BioVoiceResponse, error) {
 // CheckRegistration checks the status of the registration
 func (request *BioVoiceRequest) CheckRegistration() (*BioVoiceResponse, error) {
 	response := &BioVoiceResponse{}
+	apiURL, err := GetURLFor(
+		fmt.Sprintf("biovoice/registration/%s",
+			url.PathEscape(string(request.GetRecipient()))),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = GetClient(RegionCurrent, APIKey).Call(
+		http.MethodGet,
+		apiURL,
+		nil,
+		http.StatusOK,
+		response,
+	)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return response, nil
 }
